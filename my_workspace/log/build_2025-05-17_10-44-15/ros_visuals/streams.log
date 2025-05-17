@@ -1,0 +1,23 @@
+[0.844s] Invoking command in '/workspaces/ros2_ws/my_workspace/src/ros_visuals': PYTHONPATH=/workspaces/ros2_ws/my_workspace/build/ros_visuals/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/ros2_ws/my_workspace/install/ros_visuals/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros_visuals build --build-base /workspaces/ros2_ws/my_workspace/build/ros_visuals/build install --record /workspaces/ros2_ws/my_workspace/build/ros_visuals/install.log --single-version-externally-managed install_data
+[1.102s] running egg_info
+[1.122s] writing ../../build/ros_visuals/ros_visuals.egg-info/PKG-INFO
+[1.122s] writing dependency_links to ../../build/ros_visuals/ros_visuals.egg-info/dependency_links.txt
+[1.123s] writing entry points to ../../build/ros_visuals/ros_visuals.egg-info/entry_points.txt
+[1.123s] writing requirements to ../../build/ros_visuals/ros_visuals.egg-info/requires.txt
+[1.123s] writing top-level names to ../../build/ros_visuals/ros_visuals.egg-info/top_level.txt
+[1.474s] writing manifest file '../../build/ros_visuals/ros_visuals.egg-info/SOURCES.txt'
+[1.474s] running build
+[1.474s] running build_py
+[1.475s] copying ros_visuals/t11.py -> /workspaces/ros2_ws/my_workspace/build/ros_visuals/build/lib/ros_visuals
+[1.475s] running install
+[1.481s] running install_lib
+[1.498s] copying /workspaces/ros2_ws/my_workspace/build/ros_visuals/build/lib/ros_visuals/t11.py -> /workspaces/ros2_ws/my_workspace/install/ros_visuals/lib/python3.12/site-packages/ros_visuals
+[1.499s] byte-compiling /workspaces/ros2_ws/my_workspace/install/ros_visuals/lib/python3.12/site-packages/ros_visuals/t11.py to t11.cpython-312.pyc
+[1.501s] running install_data
+[1.501s] running install_egg_info
+[1.523s] removing '/workspaces/ros2_ws/my_workspace/install/ros_visuals/lib/python3.12/site-packages/ros_visuals-0.0.0-py3.12.egg-info' (and everything under it)
+[1.523s] Copying ../../build/ros_visuals/ros_visuals.egg-info to /workspaces/ros2_ws/my_workspace/install/ros_visuals/lib/python3.12/site-packages/ros_visuals-0.0.0-py3.12.egg-info
+[1.524s] running install_scripts
+[1.642s] Installing ros_visuals_node script to /workspaces/ros2_ws/my_workspace/install/ros_visuals/lib/ros_visuals
+[1.642s] writing list of installed files to '/workspaces/ros2_ws/my_workspace/build/ros_visuals/install.log'
+[1.671s] Invoked command in '/workspaces/ros2_ws/my_workspace/src/ros_visuals' returned '0': PYTHONPATH=/workspaces/ros2_ws/my_workspace/build/ros_visuals/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/ros2_ws/my_workspace/install/ros_visuals/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros_visuals build --build-base /workspaces/ros2_ws/my_workspace/build/ros_visuals/build install --record /workspaces/ros2_ws/my_workspace/build/ros_visuals/install.log --single-version-externally-managed install_data

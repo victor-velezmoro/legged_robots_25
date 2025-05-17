@@ -1,0 +1,2 @@
+[console_scripts]
+ros_visuals_node = ros_visuals.t11:main

@@ -1,0 +1,290 @@
+[0.090s] DEBUG:colcon:Command line arguments: ['/usr/bin/colcon', 'build']
+[0.090s] DEBUG:colcon:Parsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='build', build_base='build', install_base='install', merge_install=False, symlink_install=False, test_result_base=None, continue_on_error=False, executor='parallel', parallel_workers=8, event_handlers=None, ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['.'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=None, packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, cmake_args=None, cmake_target=None, cmake_target_skip_unavailable=False, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, ament_cmake_args=None, catkin_cmake_args=None, catkin_skip_building_tests=False, mixin_files=None, mixin=None, verb_parser=<colcon_mixin.mixin.mixin_argument.MixinArgumentDecorator object at 0x76639c6fb230>, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x76639c84f920>, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x76639c84f920>>, mixin_verb=('build',))
+[0.124s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[0.124s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[0.124s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[0.124s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[0.124s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) discover
+[0.124s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[0.124s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/workspaces/ros2_ws/my_workspace'
+[0.124s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ignore', 'ignore_ament_install']
+[0.124s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore'
+[0.124s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore_ament_install'
+[0.124s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_pkg']
+[0.124s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_pkg'
+[0.124s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_meta']
+[0.124s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_meta'
+[0.124s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ros']
+[0.124s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ros'
+[0.149s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['cmake', 'python']
+[0.149s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'cmake'
+[0.149s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python'
+[0.149s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['python_setup_py']
+[0.150s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python_setup_py'
+[0.150s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extensions ['ignore', 'ignore_ament_install']
+[0.150s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extension 'ignore'
+[0.150s] Level 1:colcon.colcon_core.package_identification:_identify(build) ignored
+[0.150s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extensions ['ignore', 'ignore_ament_install']
+[0.150s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extension 'ignore'
+[0.150s] Level 1:colcon.colcon_core.package_identification:_identify(install) ignored
+[0.150s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extensions ['ignore', 'ignore_ament_install']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extension 'ignore'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(log) ignored
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ignore', 'ignore_ament_install']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore_ament_install'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_pkg']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_pkg'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_meta']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_meta'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ros']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ros'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['cmake', 'python']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'cmake'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['python_setup_py']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python_setup_py'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extensions ['ignore', 'ignore_ament_install']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extension 'ignore'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extension 'ignore_ament_install'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extensions ['colcon_pkg']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extension 'colcon_pkg'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extensions ['colcon_meta']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extension 'colcon_meta'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extensions ['ros']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extension 'ros'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extensions ['cmake', 'python']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extension 'cmake'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extension 'python'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extensions ['python_setup_py']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template) by extension 'python_setup_py'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extensions ['ignore', 'ignore_ament_install']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extension 'ignore'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extension 'ignore_ament_install'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extensions ['colcon_pkg']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extension 'colcon_pkg'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extensions ['colcon_meta']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extension 'colcon_meta'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extensions ['ros']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extension 'ros'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extensions ['cmake', 'python']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extension 'cmake'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extension 'python'
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extensions ['python_setup_py']
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template) by extension 'python_setup_py'
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/reemc_description) by extensions ['ignore', 'ignore_ament_install']
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/reemc_description) by extension 'ignore'
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/reemc_description) by extension 'ignore_ament_install'
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/reemc_description) by extensions ['colcon_pkg']
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/reemc_description) by extension 'colcon_pkg'
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/reemc_description) by extensions ['colcon_meta']
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/reemc_description) by extension 'colcon_meta'
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/reemc_description) by extensions ['ros']
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/reemc_description) by extension 'ros'
+[0.155s] DEBUG:colcon.colcon_core.package_identification:Package 'src/T2_template/Template/reemc_description' with type 'ros.ament_cmake' and name 'reemc_description'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extensions ['ignore', 'ignore_ament_install']
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extension 'ignore'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extension 'ignore_ament_install'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extensions ['colcon_pkg']
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extension 'colcon_pkg'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extensions ['colcon_meta']
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extension 'colcon_meta'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extensions ['ros']
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extension 'ros'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extensions ['cmake', 'python']
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extension 'cmake'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extension 'python'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extensions ['python_setup_py']
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/simulator) by extension 'python_setup_py'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/talos_description) by extensions ['ignore', 'ignore_ament_install']
+[0.157s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/talos_description) by extension 'ignore'
+[0.157s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/talos_description) by extension 'ignore_ament_install'
+[0.157s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/talos_description) by extensions ['colcon_pkg']
+[0.157s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/talos_description) by extension 'colcon_pkg'
+[0.157s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/talos_description) by extensions ['colcon_meta']
+[0.157s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/talos_description) by extension 'colcon_meta'
+[0.157s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/talos_description) by extensions ['ros']
+[0.157s] Level 1:colcon.colcon_core.package_identification:_identify(src/T2_template/Template/talos_description) by extension 'ros'
+[0.157s] DEBUG:colcon.colcon_core.package_identification:Package 'src/T2_template/Template/talos_description' with type 'ros.ament_cmake' and name 'talos_description'
+[0.157s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_visuals) by extensions ['ignore', 'ignore_ament_install']
+[0.157s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_visuals) by extension 'ignore'
+[0.157s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_visuals) by extension 'ignore_ament_install'
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_visuals) by extensions ['colcon_pkg']
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_visuals) by extension 'colcon_pkg'
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_visuals) by extensions ['colcon_meta']
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_visuals) by extension 'colcon_meta'
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_visuals) by extensions ['ros']
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_visuals) by extension 'ros'
+[0.158s] DEBUG:colcon.colcon_core.package_identification:Package 'src/ros_visuals' with type 'ros.ament_python' and name 'ros_visuals'
+[0.158s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults
+[0.158s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) discover
+[0.158s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) using defaults
+[0.158s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) discover
+[0.158s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) using defaults
+[0.175s] Level 5:colcon.colcon_core.verb:set package 'reemc_description' build argument 'cmake_args' from command line to 'None'
+[0.175s] Level 5:colcon.colcon_core.verb:set package 'reemc_description' build argument 'cmake_target' from command line to 'None'
+[0.175s] Level 5:colcon.colcon_core.verb:set package 'reemc_description' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.175s] Level 5:colcon.colcon_core.verb:set package 'reemc_description' build argument 'cmake_clean_cache' from command line to 'False'
+[0.175s] Level 5:colcon.colcon_core.verb:set package 'reemc_description' build argument 'cmake_clean_first' from command line to 'False'
+[0.175s] Level 5:colcon.colcon_core.verb:set package 'reemc_description' build argument 'cmake_force_configure' from command line to 'False'
+[0.175s] Level 5:colcon.colcon_core.verb:set package 'reemc_description' build argument 'ament_cmake_args' from command line to 'None'
+[0.175s] Level 5:colcon.colcon_core.verb:set package 'reemc_description' build argument 'catkin_cmake_args' from command line to 'None'
+[0.175s] Level 5:colcon.colcon_core.verb:set package 'reemc_description' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.175s] DEBUG:colcon.colcon_core.verb:Building package 'reemc_description' with the following arguments: {'ament_cmake_args': None, 'build_base': '/workspaces/ros2_ws/my_workspace/build/reemc_description', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/workspaces/ros2_ws/my_workspace/install/reemc_description', 'merge_install': False, 'path': '/workspaces/ros2_ws/my_workspace/src/T2_template/Template/reemc_description', 'symlink_install': False, 'test_result_base': None}
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'ros_visuals' build argument 'cmake_args' from command line to 'None'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'ros_visuals' build argument 'cmake_target' from command line to 'None'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'ros_visuals' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'ros_visuals' build argument 'cmake_clean_cache' from command line to 'False'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'ros_visuals' build argument 'cmake_clean_first' from command line to 'False'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'ros_visuals' build argument 'cmake_force_configure' from command line to 'False'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'ros_visuals' build argument 'ament_cmake_args' from command line to 'None'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'ros_visuals' build argument 'catkin_cmake_args' from command line to 'None'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'ros_visuals' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.176s] DEBUG:colcon.colcon_core.verb:Building package 'ros_visuals' with the following arguments: {'ament_cmake_args': None, 'build_base': '/workspaces/ros2_ws/my_workspace/build/ros_visuals', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/workspaces/ros2_ws/my_workspace/install/ros_visuals', 'merge_install': False, 'path': '/workspaces/ros2_ws/my_workspace/src/ros_visuals', 'symlink_install': False, 'test_result_base': None}
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'talos_description' build argument 'cmake_args' from command line to 'None'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'talos_description' build argument 'cmake_target' from command line to 'None'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'talos_description' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'talos_description' build argument 'cmake_clean_cache' from command line to 'False'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'talos_description' build argument 'cmake_clean_first' from command line to 'False'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'talos_description' build argument 'cmake_force_configure' from command line to 'False'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'talos_description' build argument 'ament_cmake_args' from command line to 'None'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'talos_description' build argument 'catkin_cmake_args' from command line to 'None'
+[0.176s] Level 5:colcon.colcon_core.verb:set package 'talos_description' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.176s] DEBUG:colcon.colcon_core.verb:Building package 'talos_description' with the following arguments: {'ament_cmake_args': None, 'build_base': '/workspaces/ros2_ws/my_workspace/build/talos_description', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/workspaces/ros2_ws/my_workspace/install/talos_description', 'merge_install': False, 'path': '/workspaces/ros2_ws/my_workspace/src/T2_template/Template/talos_description', 'symlink_install': False, 'test_result_base': None}
+[0.176s] INFO:colcon.colcon_core.executor:Executing jobs using 'parallel' executor
+[0.177s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete
+[0.177s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/workspaces/ros2_ws/my_workspace/src/T2_template/Template/reemc_description' with build type 'ament_cmake'
+[0.177s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/workspaces/ros2_ws/my_workspace/src/T2_template/Template/reemc_description'
+[0.179s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[0.179s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.179s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.183s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/workspaces/ros2_ws/my_workspace/src/ros_visuals' with build type 'ament_python'
+[0.184s] Level 1:colcon.colcon_core.shell:create_environment_hook('ros_visuals', 'ament_prefix_path')
+[0.184s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/ros2_ws/my_workspace/install/ros_visuals/share/ros_visuals/hook/ament_prefix_path.ps1'
+[0.184s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/ros2_ws/my_workspace/install/ros_visuals/share/ros_visuals/hook/ament_prefix_path.dsv'
+[0.185s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/ros2_ws/my_workspace/install/ros_visuals/share/ros_visuals/hook/ament_prefix_path.sh'
+[0.185s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.185s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.188s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/workspaces/ros2_ws/my_workspace/src/T2_template/Template/talos_description' with build type 'ament_cmake'
+[0.188s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/workspaces/ros2_ws/my_workspace/src/T2_template/Template/talos_description'
+[0.189s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.189s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.197s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/ros2_ws/my_workspace/build/reemc_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/workspaces/ros2_ws/my_workspace/install/ros_visuals:/opt/ros/rolling /usr/bin/cmake --build /workspaces/ros2_ws/my_workspace/build/reemc_description -- -j8 -l8
+[0.417s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/workspaces/ros2_ws/my_workspace/src/ros_visuals'
+[0.418s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.418s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.423s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/ros2_ws/my_workspace/build/reemc_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/workspaces/ros2_ws/my_workspace/install/ros_visuals:/opt/ros/rolling /usr/bin/cmake --build /workspaces/ros2_ws/my_workspace/build/reemc_description -- -j8 -l8
+[0.432s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/ros2_ws/my_workspace/build/reemc_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/workspaces/ros2_ws/my_workspace/install/ros_visuals:/opt/ros/rolling /usr/bin/cmake --install /workspaces/ros2_ws/my_workspace/build/reemc_description
+[0.435s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/ros2_ws/my_workspace/build/talos_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/workspaces/ros2_ws/my_workspace/install/ros_visuals:/opt/ros/rolling /usr/bin/cmake --build /workspaces/ros2_ws/my_workspace/build/talos_description -- -j8 -l8
+[0.448s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(reemc_description)
+[0.451s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/ros2_ws/my_workspace/build/reemc_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/workspaces/ros2_ws/my_workspace/install/ros_visuals:/opt/ros/rolling /usr/bin/cmake --install /workspaces/ros2_ws/my_workspace/build/reemc_description
+[0.453s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/reemc_description' for CMake module files
+[0.454s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/reemc_description' for CMake config files
+[0.454s] Level 1:colcon.colcon_core.shell:create_environment_hook('reemc_description', 'cmake_prefix_path')
+[0.455s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/hook/cmake_prefix_path.ps1'
+[0.455s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/hook/cmake_prefix_path.dsv'
+[0.456s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/hook/cmake_prefix_path.sh'
+[0.457s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/reemc_description/bin'
+[0.457s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/reemc_description/lib/pkgconfig/reemc_description.pc'
+[0.457s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/reemc_description/lib/python3.12/site-packages'
+[0.457s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/reemc_description/bin'
+[0.457s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/package.ps1'
+[0.458s] INFO:colcon.colcon_core.shell:Creating package descriptor '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/package.dsv'
+[0.459s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/package.sh'
+[0.460s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/package.bash'
+[0.461s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/package.zsh'
+[0.461s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/workspaces/ros2_ws/my_workspace/install/reemc_description/share/colcon-core/packages/reemc_description)
+[0.462s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(reemc_description)
+[0.462s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/reemc_description' for CMake module files
+[0.463s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/reemc_description' for CMake config files
+[0.463s] Level 1:colcon.colcon_core.shell:create_environment_hook('reemc_description', 'cmake_prefix_path')
+[0.463s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/hook/cmake_prefix_path.ps1'
+[0.464s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/hook/cmake_prefix_path.dsv'
+[0.464s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/hook/cmake_prefix_path.sh'
+[0.465s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/reemc_description/bin'
+[0.465s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/reemc_description/lib/pkgconfig/reemc_description.pc'
+[0.465s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/reemc_description/lib/python3.12/site-packages'
+[0.466s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/reemc_description/bin'
+[0.466s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/package.ps1'
+[0.467s] INFO:colcon.colcon_core.shell:Creating package descriptor '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/package.dsv'
+[0.467s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/package.sh'
+[0.468s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/package.bash'
+[0.468s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/reemc_description/share/reemc_description/package.zsh'
+[0.469s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/workspaces/ros2_ws/my_workspace/install/reemc_description/share/colcon-core/packages/reemc_description)
+[0.470s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/ros2_ws/my_workspace/build/talos_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/workspaces/ros2_ws/my_workspace/install/ros_visuals:/opt/ros/rolling /usr/bin/cmake --build /workspaces/ros2_ws/my_workspace/build/talos_description -- -j8 -l8
+[0.471s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/ros2_ws/my_workspace/build/talos_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/workspaces/ros2_ws/my_workspace/install/ros_visuals:/opt/ros/rolling /usr/bin/cmake --install /workspaces/ros2_ws/my_workspace/build/talos_description
+[0.484s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(talos_description)
+[0.484s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/talos_description' for CMake module files
+[0.487s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/talos_description' for CMake config files
+[0.492s] Level 1:colcon.colcon_core.shell:create_environment_hook('talos_description', 'cmake_prefix_path')
+[0.492s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/hook/cmake_prefix_path.ps1'
+[0.494s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/hook/cmake_prefix_path.dsv'
+[0.496s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/ros2_ws/my_workspace/build/talos_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/workspaces/ros2_ws/my_workspace/install/ros_visuals:/opt/ros/rolling /usr/bin/cmake --install /workspaces/ros2_ws/my_workspace/build/talos_description
+[0.496s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/hook/cmake_prefix_path.sh'
+[0.497s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/talos_description/bin'
+[0.497s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/talos_description/lib/pkgconfig/talos_description.pc'
+[0.497s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/talos_description/lib/python3.12/site-packages'
+[0.497s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/talos_description/bin'
+[0.497s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/package.ps1'
+[0.498s] INFO:colcon.colcon_core.shell:Creating package descriptor '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/package.dsv'
+[0.498s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/package.sh'
+[0.498s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/package.bash'
+[0.499s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/package.zsh'
+[0.499s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/workspaces/ros2_ws/my_workspace/install/talos_description/share/colcon-core/packages/talos_description)
+[0.499s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(talos_description)
+[0.499s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/talos_description' for CMake module files
+[0.500s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/talos_description' for CMake config files
+[0.500s] Level 1:colcon.colcon_core.shell:create_environment_hook('talos_description', 'cmake_prefix_path')
+[0.500s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/hook/cmake_prefix_path.ps1'
+[0.501s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/hook/cmake_prefix_path.dsv'
+[0.501s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/hook/cmake_prefix_path.sh'
+[0.502s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/talos_description/bin'
+[0.502s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/talos_description/lib/pkgconfig/talos_description.pc'
+[0.502s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/talos_description/lib/python3.12/site-packages'
+[0.502s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/talos_description/bin'
+[0.502s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/package.ps1'
+[0.503s] INFO:colcon.colcon_core.shell:Creating package descriptor '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/package.dsv'
+[0.503s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/package.sh'
+[0.504s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/package.bash'
+[0.504s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/talos_description/share/talos_description/package.zsh'
+[0.505s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/workspaces/ros2_ws/my_workspace/install/talos_description/share/colcon-core/packages/talos_description)
+[1.006s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/ros2_ws/my_workspace/src/ros_visuals': PYTHONPATH=/workspaces/ros2_ws/my_workspace/build/ros_visuals/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/ros2_ws/my_workspace/install/ros_visuals/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros_visuals build --build-base /workspaces/ros2_ws/my_workspace/build/ros_visuals/build install --record /workspaces/ros2_ws/my_workspace/build/ros_visuals/install.log --single-version-externally-managed install_data
+[1.830s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/ros_visuals' for CMake module files
+[1.831s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/ros2_ws/my_workspace/src/ros_visuals' returned '0': PYTHONPATH=/workspaces/ros2_ws/my_workspace/build/ros_visuals/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/ros2_ws/my_workspace/install/ros_visuals/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros_visuals build --build-base /workspaces/ros2_ws/my_workspace/build/ros_visuals/build install --record /workspaces/ros2_ws/my_workspace/build/ros_visuals/install.log --single-version-externally-managed install_data
+[1.831s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/ros_visuals' for CMake config files
+[1.831s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/ros_visuals/lib'
+[1.832s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/ros_visuals/bin'
+[1.832s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/ros_visuals/lib/pkgconfig/ros_visuals.pc'
+[1.832s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/ros_visuals/lib/python3.12/site-packages'
+[1.832s] Level 1:colcon.colcon_core.shell:create_environment_hook('ros_visuals', 'pythonpath')
+[1.832s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/ros2_ws/my_workspace/install/ros_visuals/share/ros_visuals/hook/pythonpath.ps1'
+[1.832s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/ros2_ws/my_workspace/install/ros_visuals/share/ros_visuals/hook/pythonpath.dsv'
+[1.833s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/ros2_ws/my_workspace/install/ros_visuals/share/ros_visuals/hook/pythonpath.sh'
+[1.833s] Level 1:colcon.colcon_core.environment:checking '/workspaces/ros2_ws/my_workspace/install/ros_visuals/bin'
+[1.833s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(ros_visuals)
+[1.834s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/ros_visuals/share/ros_visuals/package.ps1'
+[1.834s] INFO:colcon.colcon_core.shell:Creating package descriptor '/workspaces/ros2_ws/my_workspace/install/ros_visuals/share/ros_visuals/package.dsv'
+[1.834s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/ros_visuals/share/ros_visuals/package.sh'
+[1.835s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/ros_visuals/share/ros_visuals/package.bash'
+[1.835s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/ros2_ws/my_workspace/install/ros_visuals/share/ros_visuals/package.zsh'
+[1.835s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/workspaces/ros2_ws/my_workspace/install/ros_visuals/share/colcon-core/packages/ros_visuals)
+[1.835s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:closing loop
+[1.836s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:loop closed
+[1.836s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete finished with '0'
+[1.836s] DEBUG:colcon.colcon_core.event_reactor:joining thread
+[1.840s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.notify_send': Could not find 'notify-send'
+[1.841s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.terminal_notifier': Not used on non-Darwin systems
+[1.841s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.win32': Not used on non-Windows systems
+[1.841s] INFO:colcon.colcon_notification.desktop_notification:Sending desktop notification using 'notify2'
+[1.841s] DEBUG:colcon.colcon_notification.desktop_notification.notify2:Failed to initialize notify2: org.freedesktop.DBus.Error.InvalidFileContent: D-Bus library appears to be incorrectly set up: see the manual page for dbus-uuidgen to correct this issue. (Failed to open "/var/lib/dbus/machine-id": No such file or directory; UUID file '/etc/machine-id' should contain a hex string of length 32, not length 0, with no other text)
+[1.841s] DEBUG:colcon.colcon_core.event_reactor:joined thread
+[1.841s] INFO:colcon.colcon_core.shell:Creating prefix script '/workspaces/ros2_ws/my_workspace/install/local_setup.ps1'
+[1.842s] INFO:colcon.colcon_core.shell:Creating prefix util module '/workspaces/ros2_ws/my_workspace/install/_local_setup_util_ps1.py'
+[1.843s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/workspaces/ros2_ws/my_workspace/install/setup.ps1'
+[1.844s] INFO:colcon.colcon_core.shell:Creating prefix script '/workspaces/ros2_ws/my_workspace/install/local_setup.sh'
+[1.844s] INFO:colcon.colcon_core.shell:Creating prefix util module '/workspaces/ros2_ws/my_workspace/install/_local_setup_util_sh.py'
+[1.845s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/workspaces/ros2_ws/my_workspace/install/setup.sh'
+[1.846s] INFO:colcon.colcon_core.shell:Creating prefix script '/workspaces/ros2_ws/my_workspace/install/local_setup.bash'
+[1.846s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/workspaces/ros2_ws/my_workspace/install/setup.bash'
+[1.847s] INFO:colcon.colcon_core.shell:Creating prefix script '/workspaces/ros2_ws/my_workspace/install/local_setup.zsh'
+[1.847s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/workspaces/ros2_ws/my_workspace/install/setup.zsh'
