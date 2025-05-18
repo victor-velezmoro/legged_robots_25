@@ -1,4 +1,34 @@
-# Exclude log, install, and build folders
-log/
-install/
+# ROS 2 build artifacts
 build/
+install/
+log/
+
+# Colcon metadata
+.colcon/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# VSCode/IDE configs
+.vscode/
+.idea/
+
+# Temporary files
+*.swp
+*.swo
+*.bak
+*~
+
+# MacOS-specific
+.DS_Store
+
+# Python virtual environments (if used)
+venv/
+.env/
