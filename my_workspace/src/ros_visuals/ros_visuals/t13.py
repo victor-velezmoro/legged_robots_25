@@ -7,8 +7,7 @@ import pinocchio as pin
 from tf2_ros import TransformBroadcaster
 from geometry_msgs.msg import TransformStamped
 from visualization_msgs.msg import Marker
-from geometry_msgs.msg import TwistStamped
-
+from geometry_msgs.msg import WrenchStamped
 
 
 class CagePublisher(Node):
@@ -17,14 +16,7 @@ class CagePublisher(Node):
         self.br = TransformBroadcaster(self)
         self.marker_pub = self.create_publisher(Marker, 'visualization_marker', 10)
         self.marker_pub2 = self.create_publisher(Marker, 'visualization_marker2', 10)
-        self.twist_pub = self.create_publisher(TwistStamped, 'spatial_twist', 10)
-        self.twist_pub2 = self.create_publisher(TwistStamped, 'spatial_twist_world', 10)
-        self.twist_pub3 = self.create_publisher(TwistStamped, 'spatial_twist_invers', 10)
-        self.twist_pub4 = self.create_publisher(TwistStamped, 'spatial_twist_world_invers', 10)
-        self.twist_pub5 = self.create_publisher(TwistStamped, 'spatial_twist_adjoint', 10)
-        self.twist_pub6 = self.create_publisher(TwistStamped, 'spatial_twist_world_adjoint', 10)
-        self.twist_pub7 = self.create_publisher(TwistStamped, 'spatial_twist_adjoint_invers', 10)
-        self.twist_pub8 = self.create_publisher(TwistStamped, 'spatial_twist_world_adjoint_invers', 10)
+        self.wrench_pub = self.create_publisher(WrenchStamped, 'wrench', 10)
 
     
         # Timer to call self.broadcast_transforms every 0.5 seconds
@@ -46,10 +38,6 @@ class CagePublisher(Node):
         
         #point as marker
         self.p_corner = np.array([0.0, 0.0, 0.0])
-        
-        self.spatial_twist = pin.Motion(np.array([1.0, 0.0, 0.0, 0.5, 0.0, 0.0]))  # c V = [ωx, ωy, ωz, vx, vy, vz]^T
-        
-        
         
     def publish_p_corner(self, point, frame_id):
         marker = Marker()
@@ -78,83 +66,24 @@ class CagePublisher(Node):
             self.marker_pub2.publish(marker)
         else:
             self.marker_pub.publish(marker)
-            
         
-    def publish_twist(self, transformed_twist, frame_id):
-        twist_msg = TwistStamped()
-        twist_msg.header.stamp = self.get_clock().now().to_msg()
-        twist_msg.header.frame_id = frame_id
-        twist_msg.twist.linear.x = transformed_twist.linear[0]
-        twist_msg.twist.linear.y = transformed_twist.linear[1]
-        twist_msg.twist.linear.z = transformed_twist.linear[2]
-        twist_msg.twist.angular.x = transformed_twist.angular[0]
-        twist_msg.twist.angular.y = transformed_twist.angular[1]
-        twist_msg.twist.angular.z = transformed_twist.angular[2]
         
-        # Publish the twist
-        if frame_id == "world":
-            self.twist_pub2.publish(twist_msg)
-        else:
-            self.twist_pub.publish(twist_msg)
+        
+    def publish_wrench(self, wrench, frame_id):
+        
+        wrench_msg = WrenchStamped()
+        wrench_msg.header.stamp = self.get_clock().now().to_msg()
+        wrench_msg.header.frame_id = frame_id
+        wrench_msg.wrench.force.x = wrench.linear[0]
+        wrench_msg.wrench.force.y = wrench.linear[1]
+        wrench_msg.wrench.force.z = wrench.linear[2]
+        wrench_msg.wrench.torque.x = wrench.angular[0]
+        wrench_msg.wrench.torque.y = wrench.angular[1]
+        wrench_msg.wrench.torque.z = wrench.angular[2]
 
+        # Publish the wrench
+        self.wrench_pub.publish(wrench_msg)
         
-    def publish_twist_with_color(self, twist, frame_id):
-        
-        twist_msg = TwistStamped()
-        twist_msg.header.stamp = self.get_clock().now().to_msg()
-        twist_msg.header.frame_id = frame_id
-        twist_msg.twist.linear.x = twist.linear[0]
-        twist_msg.twist.linear.y = twist.linear[1]
-        twist_msg.twist.linear.z = twist.linear[2]
-        twist_msg.twist.angular.x = twist.angular[0]
-        twist_msg.twist.angular.y = twist.angular[1]
-        twist_msg.twist.angular.z = twist.angular[2]
-        
-        
-
-        # Publish the twist
-        if frame_id == "world":
-            self.twist_pub4.publish(twist_msg)
-        else:
-            self.twist_pub3.publish(twist_msg)
-            
-    def publish_twist_with_action(self, twist, frame_id):
-    
-        twist_msg = TwistStamped()
-        twist_msg.header.stamp = self.get_clock().now().to_msg()
-        twist_msg.header.frame_id = frame_id
-        twist_msg.twist.linear.x = twist.linear[0]
-        twist_msg.twist.linear.y = twist.linear[1]
-        twist_msg.twist.linear.z = twist.linear[2]
-        twist_msg.twist.angular.x = twist.angular[0]
-        twist_msg.twist.angular.y = twist.angular[1]
-        twist_msg.twist.angular.z = twist.angular[2]
-        
-        # Publish the twist
-        if frame_id == "world":
-            self.twist_pub6.publish(twist_msg)
-        else:
-            self.twist_pub5.publish(twist_msg)
-            
-            
-    def publish_twist_with_action_invers(self, twist, frame_id):
-    
-        twist_msg = TwistStamped()
-        twist_msg.header.stamp = self.get_clock().now().to_msg()
-        twist_msg.header.frame_id = frame_id
-        twist_msg.twist.linear.x = twist.linear[0]
-        twist_msg.twist.linear.y = twist.linear[1]
-        twist_msg.twist.linear.z = twist.linear[2]
-        twist_msg.twist.angular.x = twist.angular[0]
-        twist_msg.twist.angular.y = twist.angular[1]
-        twist_msg.twist.angular.z = twist.angular[2]
-        
-        # Publish the twist
-        if frame_id == "world":
-            self.twist_pub8.publish(twist_msg)
-        else:
-            self.twist_pub7.publish(twist_msg)
-    
 
     def create_cube_transforms(self):
         """Creates 8 corner SE3 transforms of a cube centered at origin."""
@@ -226,29 +155,19 @@ class CagePublisher(Node):
             [ s,  c,  0],
             [ 0,  0,  1]
         ])
-
-    def twist_coordinate_transform(self, twist, transform):
-        
-        R = transform.rotation
-        p = transform.translation
-        
-        p_skew = np.array([
-            [0, -p[2], p[1]],
-            [p[2], 0, -p[0]],
-            [-p[1], p[0], 0]
-        ])
-        
-        adjoint = np.block([
-            [R, np.zeros((3, 3))],
-            [p_skew @ R, R]
-        ])
-        transformed_twist = adjoint @ twist.vector
         
         
-        # is the same as transform.act(twist)
-        return pin.Motion(transformed_twist)
-    
+    def wrench_formula(self, r,f):
          
+        r_skew = np.array([
+            [0, -r[2], r[1]],
+            [r[2], 0, -r[0]],
+            [-r[1], r[0], 0]
+        ])
+        moment = r_skew @ f
+        force = f
+        wrench = np.hstack((moment, force))
+        return wrench
 
     def broadcast_transforms(self):
         now = self.get_clock().now().to_msg()
@@ -307,83 +226,36 @@ class CagePublisher(Node):
             
             
         ################
-        ## Marker 
+        ##Marker
         ################
-        
+            
         corner_transform = self.transforms[3]
         transformed_point = corner_transform.act(self.p_corner)
         
         self.publish_p_corner(transformed_point, "corner_3")
         
-        world_transform = self.pose_exp6  
+        world_transform = self.pose_exp6 
         point_in_world = world_transform.act(transformed_point)
         
         self.publish_p_corner(point_in_world, "world")
         
         
+        ################
+        ##Wrench
+        ################
+        
+        corner_transform = self.transforms[1] 
+        spatial_wrench = pin.Force(np.array([1.0, 0.5, 0.2, 0.3, 0.4, 0.6]))
+        transformed_wrench = corner_transform.act(spatial_wrench) 
+        self.publish_wrench(transformed_wrench, "corner_1")
+        
+        
+        ##or
+        r = np.array([0.5, 0.5, 0.5])
+        f = np.array([1.0, 0.5, 0.2])
+        wrench = self.wrench_formula(r, f)
+        
 
-        #################
-        ## Twist 
-        #t###############
-        corner_transform = self.transforms[3]  
-        twist_transform = self.spatial_twist
-        transformed_twist = corner_transform.act(twist_transform)
-        #transformed_twist = self.twist_coordinate_transform(twist_transform, corner_transform)
-       
-
-        self.publish_twist(transformed_twist, "corner_3")
-        
-        # spatial twist with respect to world
-        world_transform = self.pose_exp6
-        transformed_twist_world = world_transform.act(twist_transform) #instead of transformed_twist
-        
-        self.publish_twist(transformed_twist_world, "world")
-        
-        #################
-        ## Twist Inversion
-        #t###############
-        world_twist = pin.Motion(np.array([1.0, 0.0, 0.0, 0.5, 0.0, 0.0]))  
-        corner_2_transform = self.transforms[2]  
-        corner_2_twist = corner_2_transform.actInv(world_twist)
-        corner_2_twist_world = world_transform.actInv(world_twist)
-        
-        self.publish_twist_with_color(corner_2_twist_world, "world")  
-        self.publish_twist_with_color(corner_2_twist, "corner_2")  
-        
-        
-        #############
-        ## Adjoint
-        #############
-        adj = corner_transform.action 
-        adjoint_twist = adj @ twist_transform.vector
-        adjoint_twist = pin.Motion(adjoint_twist)
-        self.publish_twist_with_action(adjoint_twist, "corner_3")
-        
-        
-        adjoint_twist_world = world_transform.action @ twist_transform.vector
-        adjoint_twist_world = pin.Motion(adjoint_twist_world)
-        self.publish_twist_with_action(adjoint_twist_world, "world")
-        
-        ###########
-        ## Adjoint Inversion
-        ###########
-        adjoint_twist_invers = np.linalg.inv(corner_2_transform.action) @ world_twist.vector
-        adjoint_twist_invers = pin.Motion(adjoint_twist_invers)
-        self.publish_twist_with_action_invers(adjoint_twist_invers, "corner_2")
-        
-        adjoint_twist_world_invers = np.linalg.inv(world_transform.action) @ world_twist.vector
-        adjoint_twist_world_invers = pin.Motion(adjoint_twist_world_invers)
-        self.publish_twist_with_action_invers(adjoint_twist_world_invers, "world")
-        
-        
-        ######
-        ##Answer to roation question
-        ######
-        
-        # When rotating the cube around the world, the angular velocity vector will remain fixed in the world frame, while the liner velocity vector rotates with the cube.This happens because the linear velocity is tied to the cube's local frame, and as the frame rotates, the linear velocity vector rotates with it.
-        
-        
-        
     def update_pose_quaternion(self, dt):
         # Update translation
         self.translation_quat += self.linear_velocity * dt
