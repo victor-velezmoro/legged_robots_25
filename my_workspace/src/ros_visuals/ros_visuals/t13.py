@@ -17,6 +17,11 @@ class CagePublisher(Node):
         self.marker_pub = self.create_publisher(Marker, 'visualization_marker', 10)
         self.marker_pub2 = self.create_publisher(Marker, 'visualization_marker2', 10)
         self.wrench_pub = self.create_publisher(WrenchStamped, 'wrench', 10)
+        self.wrench_pub2 = self.create_publisher(WrenchStamped, 'wrench2', 10)
+        self.wrench_pub3 = self.create_publisher(WrenchStamped, 'wrench3', 10)
+        self.wrench_pub4 = self.create_publisher(WrenchStamped, 'wrench4', 10)
+        self.wrench_pub5 = self.create_publisher(WrenchStamped, 'wrench5', 10)
+        self.wrench_pub6 = self.create_publisher(WrenchStamped, 'wrench6', 10)
 
     
         # Timer to call self.broadcast_transforms every 0.5 seconds
@@ -80,9 +85,58 @@ class CagePublisher(Node):
         wrench_msg.wrench.torque.x = wrench.angular[0]
         wrench_msg.wrench.torque.y = wrench.angular[1]
         wrench_msg.wrench.torque.z = wrench.angular[2]
+        
+        if frame_id == "world":
+            self.wrench_pub2.publish(wrench_msg)
+        else:
+            self.wrench_pub.publish(wrench_msg)
+            
+    def publish_wrench_inv(self, wrench, frame_id):
+        
+        wrench_msg = WrenchStamped()
+        wrench_msg.header.stamp = self.get_clock().now().to_msg()
+        wrench_msg.header.frame_id = frame_id
+        wrench_msg.wrench.force.x = wrench.linear[0]
+        wrench_msg.wrench.force.y = wrench.linear[1]
+        wrench_msg.wrench.force.z = wrench.linear[2]
+        wrench_msg.wrench.torque.x = wrench.angular[0]
+        wrench_msg.wrench.torque.y = wrench.angular[1]
+        wrench_msg.wrench.torque.z = wrench.angular[2]
+        
+    
+        self.wrench_pub3.publish(wrench_msg)
+    
+    def publish_wrench_adj(self, wrench, frame_id):
+        
+        wrench_msg = WrenchStamped()
+        wrench_msg.header.stamp = self.get_clock().now().to_msg()
+        wrench_msg.header.frame_id = frame_id
+        wrench_msg.wrench.force.x = wrench.linear[0]
+        wrench_msg.wrench.force.y = wrench.linear[1]
+        wrench_msg.wrench.force.z = wrench.linear[2]
+        wrench_msg.wrench.torque.x = wrench.angular[0]
+        wrench_msg.wrench.torque.y = wrench.angular[1]
+        wrench_msg.wrench.torque.z = wrench.angular[2]
+        
+    
+        if frame_id == "world":
+            self.wrench_pub5.publish(wrench_msg)
+        else:
+            self.wrench_pub4.publish(wrench_msg)
 
-        # Publish the wrench
-        self.wrench_pub.publish(wrench_msg)
+    def publish_wrench_adj_inv(self, wrench, frame_id):
+        
+        wrench_msg = WrenchStamped()
+        wrench_msg.header.stamp = self.get_clock().now().to_msg()
+        wrench_msg.header.frame_id = frame_id
+        wrench_msg.wrench.force.x = wrench.linear[0]
+        wrench_msg.wrench.force.y = wrench.linear[1]
+        wrench_msg.wrench.force.z = wrench.linear[2]
+        wrench_msg.wrench.torque.x = wrench.angular[0]
+        wrench_msg.wrench.torque.y = wrench.angular[1]
+        wrench_msg.wrench.torque.z = wrench.angular[2]
+        self.wrench_pub6.publish(wrench_msg)
+        
         
 
     def create_cube_transforms(self):
@@ -244,16 +298,74 @@ class CagePublisher(Node):
         ##Wrench
         ################
         
-        corner_transform = self.transforms[1] 
-        spatial_wrench = pin.Force(np.array([1.0, 0.5, 0.2, 0.3, 0.4, 0.6]))
-        transformed_wrench = corner_transform.act(spatial_wrench) 
-        self.publish_wrench(transformed_wrench, "corner_1")
+        # corner_transform = self.transforms[1] 
+        # spatial_wrench = pin.Force(np.array([1.0, 0.5, 0.2, 0.3, 0.4, 0.6]))
+        # transformed_wrench = corner_transform.act(spatial_wrench) 
+        # self.publish_wrench(transformed_wrench, "corner_1")
         
         
         ##or
+        
+        
+        corner_transform1 = self.transforms[1]
         r = np.array([0.5, 0.5, 0.5])
         f = np.array([1.0, 0.5, 0.2])
         wrench = self.wrench_formula(r, f)
+        wrench = pin.Force(wrench)
+        transformed_wrench = corner_transform1.act(wrench)
+        print("Using act:", transformed_wrench)
+        self.publish_wrench(transformed_wrench, "corner_1")
+        
+        
+        world_transform = self.pose_exp6
+        point_in_world = world_transform.act(transformed_wrench)
+        self.publish_wrench(point_in_world, "world")
+        
+        
+        ############
+        ## Wrench (world to corner)
+        ############
+        
+        world_wrench = pin.Force(np.array([0.5, 0.5, 0.5, 0.3, 0.4, 0.6]))
+        corner_transform2= self.transforms[2]
+        corner_transform_inv2 = corner_transform2.actInv(world_wrench)
+        self.publish_wrench_inv(corner_transform_inv2, "corner_2")
+        
+        
+        ################
+        ##Wrench (action)
+        ###############
+        
+        corner_transform1 = self.transforms[1]
+        adj = corner_transform1.action
+        adjoint_wrench = adj @ wrench.vector
+        adjoint_wrench = pin.Force(adjoint_wrench)
+        self.publish_wrench_adj(adjoint_wrench, "corner_1")
+        print("Using action:", adjoint_wrench)
+        
+        
+        world_transform = self.pose_exp6
+        adjoint_wrench_world = world_transform.action @ adjoint_wrench.vector
+        point_in_world = pin.Force(adjoint_wrench_world)
+        self.publish_wrench_adj(point_in_world, "world")
+        
+        
+        
+        adjoint_wrench_invers = np.linalg.inv(corner_transform2.action) @ world_wrench.vector
+        adjoint_wrench_invers_motion = pin.Force(adjoint_wrench_invers)
+        self.publish_wrench_adj_inv(adjoint_wrench_invers_motion, "corner_2")
+        
+        
+        
+        
+        
+        ######
+        ##Answer
+        ######
+        
+        #When the cage spins, the force component of the wrench stays constant because it is independent of the frame's rotation. The torque component changes because it depends on the relative position vector, which varies with the rotation of the cage.
+
+        
         
 
     def update_pose_quaternion(self, dt):
