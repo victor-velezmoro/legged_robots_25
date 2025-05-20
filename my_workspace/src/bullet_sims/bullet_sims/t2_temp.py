@@ -40,6 +40,7 @@ q_actuated_home[22:30] = np.array([0, 0, 0, 0, 0, 0, 0, 0 ])
 
 # Initialization position including floating base
 q_home = np.hstack([np.array([0, 0, z_init, 0, 0, 0, 1]), q_actuated_home])
+# p = position folating base, Q quaternion (floaing base  orientation), q full sytem position state (actuated joints position)
 
 # setup the task stack
 modelWrap = pin.RobotWrapper.BuildFromURDF(urdf,                        # Model description
@@ -49,6 +50,8 @@ modelWrap = pin.RobotWrapper.BuildFromURDF(urdf,                        # Model 
                                            None)                        # Load meshes different from the descripor
 # Get model from wrapper
 model = modelWrap.model
+
+
 
 # setup the simulator
 simulator = PybulletWrapper(sim_rate=1000)
@@ -62,6 +65,18 @@ robot = Robot(simulator,            # The Pybullet wrapper
               q=q_home,             # Initial state
               useFixedBase=False,   # Fixed base or not
               verbose=True)         # Printout details
+
+#for q_home vector = robot.q()
+#for velocity vector = robot.v()
+data = robot._model.createData()
+M = pin.crba(robot._model, robot._q, data)
+pin.ccrba(robot._model, robot._q, robot._v, data)
+hg = data.hg
+Ag = data.Ag
+com = data.com[0]
+
+nle = pin.nonLinearEffects(robot._model, robot._q, robot._v, data)
+
 
 #Needed for compatibility
 simulator.addLinkDebugFrame(-1,-1)
