@@ -22,7 +22,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'ros_visuals_node = ros_visuals.t13:main',  
+            't11 = ros_visuals.t11:main',
+            't12 = ros_visuals.t12:main',
+            't13 = ros_visuals.t13:main',  
         ],
     },
 )

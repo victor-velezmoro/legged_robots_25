@@ -16,9 +16,23 @@ def generate_launch_description():
         arguments=['-d', rviz_path],
     )
     
-    ros_visuals_node = Node(
+    ros_visuals_node_11 = Node(
         package='ros_visuals',
-        executable='ros_visuals_node',
+        executable='t11',
+        name='ros_visuals_node',
+        output='screen',
+        parameters=[{'use_sim_time': False}],
+    )
+    ros_visuals_node_12 = Node(
+        package='ros_visuals',
+        executable='t12',
+        name='ros_visuals_node',
+        output='screen',
+        parameters=[{'use_sim_time': False}],
+    )
+    ros_visuals_node_13 = Node(
+        package='ros_visuals',
+        executable='t13',
         name='ros_visuals_node',
         output='screen',
         parameters=[{'use_sim_time': False}],
@@ -26,7 +40,9 @@ def generate_launch_description():
     
     
     ld.add_action(rviz_node)
-    ld.add_action(ros_visuals_node)
+    #ld.add_action(ros_visuals_node_11)
+    #ld.add_action(ros_visuals_node_12)
+    ld.add_action(ros_visuals_node_13)
 
     # Return the launch description
     return ld

@@ -340,19 +340,19 @@ class CagePublisher(Node):
         self.publish_twist(transformed_twist_world, "world")
         
         #################
-        ## Twist Inversion
+        ## Twist (world to corner)
         #t###############
         world_twist = pin.Motion(np.array([1.0, 0.0, 0.0, 0.5, 0.0, 0.0]))  
         corner_2_transform = self.transforms[2]  
         corner_2_twist = corner_2_transform.actInv(world_twist)
         corner_2_twist_world = world_transform.actInv(world_twist)
         
-        self.publish_twist_with_color(corner_2_twist_world, "world")  
+        #self.publish_twist_with_color(corner_2_twist_world, "world")  
         self.publish_twist_with_color(corner_2_twist, "corner_2")  
         
         
         #############
-        ## Adjoint
+        ## Adjoint (action corner to world)
         #############
         adj = corner_transform.action 
         adjoint_twist = adj @ twist_transform.vector
@@ -373,7 +373,7 @@ class CagePublisher(Node):
         
         adjoint_twist_world_invers = np.linalg.inv(world_transform.action) @ world_twist.vector
         adjoint_twist_world_invers = pin.Motion(adjoint_twist_world_invers)
-        self.publish_twist_with_action_invers(adjoint_twist_world_invers, "world")
+        #self.publish_twist_with_action_invers(adjoint_twist_world_invers, "world")
         
         
         ######

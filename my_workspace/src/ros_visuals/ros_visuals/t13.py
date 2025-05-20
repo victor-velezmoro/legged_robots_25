@@ -137,6 +137,31 @@ class CagePublisher(Node):
         wrench_msg.wrench.torque.z = wrench.angular[2]
         self.wrench_pub6.publish(wrench_msg)
         
+
+    def act_function_manual(self, transform, wrench):
+        
+        # Extract the rotation and translation from the SE3 transform
+        R = transform.rotation
+        p = transform.translation
+
+        
+        #transformed_wrench = pin.Force(R @ wrench.linear + np.cross(p, wrench.angular))
+        
+        p_skew = np.array([
+            [0, -p[2], p[1]],
+            [p[2], 0, -p[0]],
+            [-p[1], p[0], 0]
+        ])
+        
+        adjoint = np.block([
+            [R, np.zeros((3, 3))],
+            [p_skew @ R, R]
+        ])
+        
+        transformed_wrench = adjoint @ wrench.vector
+        return pin.Motion(transformed_wrench)
+        
+
         
 
     def create_cube_transforms(self):
@@ -306,17 +331,18 @@ class CagePublisher(Node):
         
         ##or
         
-        
+        #wrench to corner
         corner_transform1 = self.transforms[1]
         r = np.array([0.5, 0.5, 0.5])
         f = np.array([1.0, 0.5, 0.2])
         wrench = self.wrench_formula(r, f)
         wrench = pin.Force(wrench)
-        transformed_wrench = corner_transform1.act(wrench)
-        print("Using act:", transformed_wrench)
+        transformed_wrench = self.act_function_manual(corner_transform1, wrench)
+        #transformed_wrench = corner_transform1.act(wrench)
+        #print("Using act:", transformed_wrench)
         self.publish_wrench(transformed_wrench, "corner_1")
         
-        
+        #corner to world
         world_transform = self.pose_exp6
         point_in_world = world_transform.act(transformed_wrench)
         self.publish_wrench(point_in_world, "world")
@@ -335,22 +361,22 @@ class CagePublisher(Node):
         ################
         ##Wrench (action)
         ###############
-        
+        #wrench to corner
         corner_transform1 = self.transforms[1]
         adj = corner_transform1.action
         adjoint_wrench = adj @ wrench.vector
         adjoint_wrench = pin.Force(adjoint_wrench)
         self.publish_wrench_adj(adjoint_wrench, "corner_1")
-        print("Using action:", adjoint_wrench)
+        #print("Using action:", adjoint_wrench)
         
-        
+        #wrench to world
         world_transform = self.pose_exp6
         adjoint_wrench_world = world_transform.action @ adjoint_wrench.vector
         point_in_world = pin.Force(adjoint_wrench_world)
         self.publish_wrench_adj(point_in_world, "world")
         
         
-        
+        # world to corner
         adjoint_wrench_invers = np.linalg.inv(corner_transform2.action) @ world_wrench.vector
         adjoint_wrench_invers_motion = pin.Force(adjoint_wrench_invers)
         self.publish_wrench_adj_inv(adjoint_wrench_invers_motion, "corner_2")
