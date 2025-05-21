@@ -70,15 +70,53 @@ robot = Robot(simulator,            # The Pybullet wrapper
 #for velocity vector = robot.v()
 data = robot._model.createData()
 M = pin.crba(robot._model, data,robot._q )
-print("Mass matrix M: ", M)
+
+
+
 pin.ccrba(robot._model, data, robot._q, robot._v )
 hg = data.hg
 Ag = data.Ag
 com = data.com[0]
 
 nle = pin.nonLinearEffects(robot._model, data, robot._q, robot._v)
-print("Non linear effects: ", nle)
 
+
+
+
+
+###############
+## PD CONTROLLER
+###############
+
+kp_base = 6.0  # Base proportional gain
+kd_base = 4.0   # Base derivative gain
+
+# Create diagonal gain matrices
+Kp = np.eye(32)
+Kd = np.eye(32)
+
+# Apply different gains based on robot segments
+# Legs (indices 0-11): Higher gains for supporting body weight
+for i in range(0, 12):
+    Kp[i, i] = 3.5 * kp_base  # 3x stronger for legs
+    Kd[i, i] = 2 * kd_base  # Higher damping to prevent oscillation
+# Torso (indices 12-13): Medium-high gains for stability
+for i in range(12, 14):
+    Kp[i, i] = 3.0 * kp_base
+    Kd[i, i] = 2.5 * kd_base
+
+# Arms (indices 14-29): Lower gains for smooth motion
+for i in range(14, 30):
+    Kp[i, i] = 0.8 * kp_base
+    Kd[i, i] = 1.0 * kd_base
+
+# Head (indices 30-31): Low gains to prevent jerky motion
+for i in range(30, 32):
+    Kp[i, i] = 0.6 * kp_base
+    Kd[i, i] = 1.0 * kd_base
+
+
+q_desired = np.zeros(32)
 
 #Needed for compatibility
 simulator.addLinkDebugFrame(-1,-1)
@@ -91,7 +129,10 @@ pb.resetDebugVisualizerCamera(
     cameraTargetPosition=[0.0, 0.0, 0.8])
 
 # Joint command vector
-tau = q_actuated_home*0
+#tau = q_actuated_home*0
+
+tau = np.zeros(32)
+
 
 done = False
 while not done:
@@ -99,6 +140,14 @@ while not done:
     simulator.step()
     simulator.debug()
     robot.update()
+    
+    q_current = robot._q[7:]
+    v_current = robot._v[6:]
+    
+    position_error = q_desired - q_current
+    tau = Kp @ position_error - Kd @ (v_current)
+
+    
     
     # command to the robot
     robot.setActuatedJointTorques(tau)

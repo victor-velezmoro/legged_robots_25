@@ -1,0 +1,1 @@
+The t2_temp.py is not a ROS2 since it has no publisher and subscriber. It does not use any ROS2 dependencies.
