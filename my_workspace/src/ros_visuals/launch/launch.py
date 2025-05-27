@@ -39,10 +39,12 @@ def generate_launch_description():
     )
     
     
+    
+    
     ld.add_action(rviz_node)
     #ld.add_action(ros_visuals_node_11)
-    #ld.add_action(ros_visuals_node_12)
-    ld.add_action(ros_visuals_node_13)
+    ld.add_action(ros_visuals_node_12)
+    #ld.add_action(ros_visuals_node_13)
 
     # Return the launch description
     return ld

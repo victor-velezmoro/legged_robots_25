@@ -11,6 +11,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', ['launch/launch.py']),
+        ('share/' + package_name + '/launch', ['launch/talos_rviz.launch.py']),
 
     ],
     install_requires=['setuptools'],

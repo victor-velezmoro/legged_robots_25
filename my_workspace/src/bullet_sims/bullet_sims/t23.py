@@ -10,7 +10,7 @@ from std_msgs.msg import String, Header
 
 
 ##Everything is more beautiful in a class :)
-##Why i changed it? Because i love logging
+##Why i changed it? Because i love logger
 
 class RobotSimulation(Node):
     def __init__(self):
@@ -107,7 +107,10 @@ class RobotSimulation(Node):
     
         # Controller setup
         self.sim_dt = 1.0/1000.0
-        self.duration = 0.5
+        self.duration = 2.0  
+        self.publish_counter = 0
+        self.publish_interval_steps = int((1.0/30.0) / self.sim_dt)  
+
         self.setup_controller()
         self.setup_trajectory()
         
@@ -115,36 +118,35 @@ class RobotSimulation(Node):
     
     def setup_controller(self):
         # PD controller setup
-        kp_base = 70.0
-        kd_base = 3.0
+        kp_base = 300# 300
+        kd_base = 0.5
         
-        # Create diagonal gain matrices
+        # Create diagonal gain1matrices
         self.Kp = np.eye(32)
         self.Kd = np.eye(32)
         
         # Apply different gains based on robot segments
         # Legs (indices 0-11)
         for i in range(0, 12):
-            self.Kp[i, i] = 3.5 * kp_base
-            self.Kd[i, i] = 2 * kd_base
+            self.Kp[i, i] = 3.0 * kp_base
+            self.Kd[i, i] = 2.0 * kd_base
         # Torso (indices 12-13)
         for i in range(12, 14):
-            self.Kp[i, i] = 3.0 * kp_base
-            self.Kd[i, i] = 2.5 * kd_base
+            self.Kp[i, i] = 2.0 * kp_base
+            self.Kd[i, i] = 2.0 * kd_base
         # Arms (indices 14-29)
         for i in range(14, 30):
-            self.Kp[i, i] = 0.8 * kp_base
+            self.Kp[i, i] = 1.0 * kp_base
             self.Kd[i, i] = 1.0 * kd_base
         # Head (indices 30-31)
         for i in range(30, 32):
-            self.Kp[i, i] = 0.6 * kp_base
             self.Kd[i, i] = 1.0 * kd_base
 
     def setup_trajectory(self):
         self.q_ini = self.robot._q
         
-        self.get_logger().debug(f"q_ini: {self.q_ini}")
-        self.get_logger().debug(f"q_home: {self.q_home}")
+        #self.get_logger().debug(f"q_ini: {self.q_ini}")
+        #self.get_logger().debug(f"q_home: {self.q_home}")
         
         # Generate the trajectory
         self.trajectory = self.spline_interpolation(self.robot, self.robot._model, 
@@ -174,7 +176,7 @@ class RobotSimulation(Node):
         joint_state_msg.position = q.tolist()
         joint_state_msg.velocity = v.tolist()
         joint_state_msg.effort = tau.tolist()
-        self.get_logger().debug(f"Joint State: {joint_state_msg}")
+        #self.get_logger().debug(f"Joint State: {joint_state_msg}")
         
         self.joint_state_publisher.publish(joint_state_msg)
     
@@ -193,7 +195,7 @@ class RobotSimulation(Node):
             q_desired_full = self.trajectory[self.trajectory_index]
             # Extract only actuated joints for control
             q_desired = q_desired_full[7:]
-            #self.get_logger().debug(f"q_desired: {q_desired}")
+            self.get_logger().debug(f"q_desired: {q_desired}")
             
             self.trajectory_index += 1
             
@@ -202,8 +204,8 @@ class RobotSimulation(Node):
                 self.get_logger().info("Trajectory completed!")
         else:
             # Use zero position as desired once trajectory is finished
-            q_desired = np.zeros(32)
-        
+            q_desired = self.q_home[7:]
+
         q_current = self.robot._q[7:]
         v_current = self.robot._v[6:]
         
@@ -212,7 +214,14 @@ class RobotSimulation(Node):
         
         # command to the robot
         self.robot.setActuatedJointTorques(tau)
-        self.publish_joint_states(q_current, v_current, tau)
+        
+        
+        #publishing with counter to reach 30 Hz
+        #Note: due to CPU limitation 1kHz is never reached, max 250 Hz (therefor calculation steps to reach 30 Hz is not prefect) 
+        self.publish_counter += 1
+        if self.publish_counter  >= self.publish_interval_steps:
+            self.publish_joint_states(q_current, v_current, tau)
+            self.publish_counter = 0
 
 def main(args=None):
     rclpy.init(args=args)
