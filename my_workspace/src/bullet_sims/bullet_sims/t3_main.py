@@ -17,6 +17,8 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import PoseStamped
+import numpy.linalg as la
+from scipy.interpolate import CubicSpline
 
 ################################################################################
 # utility functions
@@ -33,15 +35,31 @@ class State(Enum):
 class Talos(Robot):
     def __init__(self, simulator, q=None, verbose=True, useFixedBase=True):
         
+        '''
+        Talos
+        0, 1, 2, 3, 4, 5, 			    # left leg
+        6, 7, 8, 9, 10, 11, 			# right leg
+        12, 13,                         # torso
+        14, 15, 16, 17, 18, 19, 20, 21  # left arm
+        22, 23, 24, 25, 26, 27, 28, 29  # right arm
+        30, 31                          # head
+
+        REEMC
+        0, 1, 2, 3, 4, 5, 			    # left leg
+        6, 7, 8, 9, 10, 11, 			# right leg
+        12, 13,                         # torso
+        14, 15, 16, 17, 18, 19, 20,     # left arm
+        21, 22, 23, 24, 25, 26, 27,     # right arm
+        28, 29                          # head
+        '''
+        
         
         
         self.urdf = "src/talos_description/robots/talos_reduced.urdf"
         self.path_meshes = "src/talos_description/meshes/../.."
         
-        self.wrapper = RobotWrapper.BuildFromURDF(
-            self.urdf,
-            self.path_meshes,
-            verbose=verbose)
+
+        self.wrapper = pin.RobotWrapper.BuildFromURDF(self.urdf, self.path_meshes, None, True, None)
 
         self.model = self.wrapper.model
         self.data = self.wrapper.data
@@ -67,7 +85,33 @@ class Talos(Robot):
         super().update()
         
         self.wrapper.forwardKinematics(self._q)
+        
+    def massMatrix(self):
+        """Compute and return the mass matrix for actuated joints only"""
+        pin.forwardKinematics(self.model, self.data, self._q)
+        
+        # Compute mass matrix using Pinocchio
+        M_full = pin.crba(self.model, self.data, self._q)
+        
+        # Return only actuated joints part
+        if self._use_fixed_base:
+            return M_full  # Should be 32x32
+        else:
+            return M_full[6:, 6:]  
     
+    def coriolisAndGravity(self):
+        """Compute and return Coriolis and gravity terms for actuated joints only"""
+        pin.forwardKinematics(self.model, self.data, self._q, self._v)
+        
+        # Compute nonlinear effects (Coriolis + gravity)
+        nle_full = pin.nonLinearEffects(self.model, self.data, self._q, self._v)
+        
+        # Return only actuated joints part
+        if self._use_fixed_base:
+            return nle_full  # Should be 32
+        else:
+            return nle_full[6:]  
+        
     def wrapper(self):
         return self._wrapper
 
@@ -106,12 +150,38 @@ class JointSpaceController:
     """
     def __init__(self, robot, Kp, Kd):        
         # Save gains, robot ref
-        None
-    
+        self.robot = robot
+        self.Kp = np.diag(Kp)
+        self.Kd = np.diag(Kd)
+
     def update(self, q_r, q_r_dot, q_r_ddot):
         # Compute jointspace torque, return torque
-        None
+        #τ = M (q) [q̈r − Kd (q̇ − q̇r ) − Kp (q − qr )] + h (q, q̇)
+        
+        if self.robot._use_fixed_base:
+            # For fixed base robot, all joints are actuated
+            q = self.robot._q
+            v = self.robot._v
+        else:
+            # For floating base robot, use the correct offsets
+            q = self.robot._q[self.robot._pos_idx_offset:]  # Skip floating base position (7 DOF)
+            v = self.robot._v[self.robot._vel_idx_offset:]  # Skip floating base velocity (6 DOF)
+            
     
+
+        position_error = q_r - q
+        velocity_error = q_r_dot - v
+
+        # Compute the mass matrix
+        M = self.robot.massMatrix()
+        h = self.robot.coriolisAndGravity()
+        
+
+        # Compute the desired acceleration ( sign change for consistancy/best practice)
+        tau = M @ (q_r_ddot + self.Kd @ velocity_error + self.Kp @ position_error) + h
+
+        return tau
+
 class CartesianSpaceController:
     """CartesianSpaceController
     Tracking controller in cartspace
@@ -150,6 +220,12 @@ class Environment(Node):
         self.q_home[14:22] = np.array([0, +0.45, 0, -1, 0, 0, 0, 0 ])
         self.q_home[22:30] = np.array([0, -0.45, 0, -1, 0, 0, 0, 0 ])
         
+        # self.q_home = np.zeros(32)
+        # self.q_home[:6] = np.array([0, 0, -0.44, 0.9, -0.45, 0])
+        # self.q_home[6:12] = np.array([0, 0, -0.44, 0.9, -0.45, 0])
+        # self.q_home[14:22] = np.array([0, -0.24, 0, -1, 0, 0, 0, 0])
+        # self.q_home[22:30] = np.array([0, -0.24, 0, -1, 0, 0, 0, 0])
+        
         self.q_init = np.zeros(32)
         
         self.robot = Talos(self.simulator, q=self.q_init, verbose=True, useFixedBase=True)
@@ -163,6 +239,48 @@ class Environment(Node):
 
         # TODO: create a joint spline 
         # TODO: create a joint controller
+        self.spline_duration = 5.0
+        t_points = np.array([0.0, self.spline_duration])
+        
+        if self.robot._use_fixed_base:
+            q_ini_ac = self.robot._q
+            q_home_ac = self.q_home
+            n_actuated = len(q_ini_ac)
+        else:
+            q_ini_ac = self.robot._q[self.robot._pos_idx_offset:]  # Use robot's position offset
+            q_home_ac = self.q_home[self.robot._pos_idx_offset:]   # Use robot's position offset
+            n_actuated = len(q_ini_ac)
+
+        q_waypoints = np.column_stack([q_ini_ac, q_home_ac])
+        
+        self.joint_spline = CubicSpline(t_points, q_waypoints.T, bc_type='clamped')
+        
+        kp_base = 70.0
+        kd_base = 3.0
+        
+        # Initialize gain arrays for actuated joints (32 joints)
+        Kp = np.zeros(32)
+        Kd = np.zeros(32)
+        
+        # Apply different gains based on robot segments
+        # Legs (indices 0-11)
+        for i in range(0, 12):
+            Kp[i] = 3.5 * kp_base
+            Kd[i] = 2 * kd_base
+        # Torso (indices 12-13)
+        for i in range(12, 14):
+            Kp[i] = 3.0 * kp_base
+            Kd[i] = 2.5 * kd_base
+        # Arms (indices 14-29)
+        for i in range(14, 30):
+            Kp[i] = 0.8 * kp_base
+            Kd[i] = 1.0 * kd_base
+        # Head (indices 30-31)
+        for i in range(30, 32):
+            Kp[i] = 0.6 * kp_base
+            Kd[i] = 1.0 * kd_base
+
+        self.joint_controller = JointSpaceController(self.robot, Kp, Kd)
         
         ########################################################################
         # cart space: hand motion
@@ -187,8 +305,24 @@ class Environment(Node):
         # TODO: Do inital jointspace, switch to cartesianspace control
         
         # command the robot
-        # self.robot.setActuatedJointTorques(tau)
-            
+        
+        if self.cur_state == State.JOINT_SPLINE:
+            if t <= self.spline_duration:
+                q_r = self.joint_spline(t)
+                q_r_dot = self.joint_spline(t, 1)
+                q_r_ddot = self.joint_spline(t, 2)
+                tau = self.joint_controller.update(q_r, q_r_dot, q_r_ddot)
+            else:
+                q_r = self.joint_spline(self.spline_duration)
+                q_r_dot = np.zeros_like(q_r)
+                q_r_ddot = np.zeros_like(q_r)
+                tau = self.joint_controller.update(q_r, q_r_dot, q_r_ddot)
+                
+        else:
+            tau = np.zeros(self.robot.actuatedJointCount())
+        
+        self.robot.setActuatedJointTorques(tau)
+
         if t - self.t_publish >= self.publish_period:
             self.robot.publish()
             self.t_publish = t

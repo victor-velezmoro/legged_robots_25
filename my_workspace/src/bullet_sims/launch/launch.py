@@ -24,6 +24,7 @@ def generate_launch_description():
     
     talos_description_pkg_share = FindPackageShare('talos_description').find('talos_description')
     urdf_file_path = os.path.join(talos_description_pkg_share, 'robots', 'talos_reduced.urdf')
+    #urdf_file_path = "/workspaces/ros2_ws/my_workspace/src/talos_description/robots/talos_reduced.urdf"
     
     with open(urdf_file_path, 'r') as infp:
         robot_desc = infp.read()
@@ -77,8 +78,8 @@ def generate_launch_description():
     ld.add_action(rsp)
     #ld.add_action(robot_state_publisher_node)
     ld.add_action(rviz_node)
-    #ld.add_action(t3_node)
-    ld.add_action(t23_node)
+    ld.add_action(t3_node)
+    #ld.add_action(t23_node)
     
 
     # Return the launch description

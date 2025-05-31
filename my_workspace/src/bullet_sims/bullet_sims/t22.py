@@ -46,6 +46,7 @@ class RobotSimulation(Node):
         self.q_actuated_home[22:30] = np.array([0, -0.24, 0, -1, 0, 0, 0, 0])
         
         
+        
         self.q_home = np.hstack([np.array([0, 0, self.z_init, 0, 0, 0, 1]), self.q_actuated_home])
         # p = position folating base, Q quaternion (floaing base  orientation), q full sytem position state (actuated joints position)
 
