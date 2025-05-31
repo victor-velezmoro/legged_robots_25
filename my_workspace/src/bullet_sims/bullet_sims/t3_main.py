@@ -188,11 +188,58 @@ class CartesianSpaceController:
     """
     def __init__(self, robot, joint_name, Kp, Kd):
         # save gains, robot ref
-        None
+        self.robot = robot
+        self.joint_name = joint_name
+        if len(Kp) > 6:
+            # Take only the first 6 elements for Cartesian control
+            self.Kp = np.diag(Kp[:6])
+            self.Kd = np.diag(Kd[:6])
+        else:
+            self.Kp = np.diag(Kp)
+            self.Kd = np.diag(Kd)# Only use first 6 DOF for Cartesian control
+
+        self.id = robot.model.getJointId(self.joint_name)
         
     def update(self, X_r, X_dot_r, X_ddot_r):
-        # compute cartesian control torque, return torque
-        None
+        
+        if self.robot._use_fixed_base:
+            # For fixed base robot, all joints are actuated
+            q = self.robot._q
+            v = self.robot._v
+        else:
+            # For floating base robot, use the correct offsets
+            #τ = MJ# Ẍd − J̇q + h
+            # ̈X d = Ẍ r − Kd (Ẋ − Ẋ )− Kp (X − X r)
+            q = self.robot._q[self.robot._pos_idx_offset:]  # Skip floating base position (7 DOF)
+            v = self.robot._v[self.robot._vel_idx_offset:] 
+
+        J = pin.computeJointJacobian(self.robot.model, self.robot.data, self.robot.q(), self.id)
+        if not self.robot._use_fixed_base:
+            J = J[:, 6:]
+        
+        X = self.robot.data.oMi[self.id]
+        X_dot = J @ v
+        X_error = pin.log6(X.inverse() * X_r).vector 
+        X_dot_error = X_dot_r - X_dot
+        X_ddot_d = X_ddot_r + self.Kd @ X_dot_error + self.Kp @ X_error
+        
+        J_dot_q_dot = pin.getClassicalAcceleration(self.robot.model, self.robot.data, self.id, pin.ReferenceFrame.LOCAL).vector
+        
+        if not self.robot._use_fixed_base:
+            # Get only the actuated part of the acceleration
+            a_actuated = np.zeros(len(v))  # Initialize with zeros for actuated joints
+            J_dot_q_dot = J @ a_actuated  # This will be zero for this implementation
+            
+        damp = 1e-6
+        J_pinv = J.T @ np.linalg.inv(J @ J.T + damp * np.eye(6))
+        q_ddot_d = J_pinv @ (X_ddot_d - J_dot_q_dot)
+        
+        M = self.robot.massMatrix()
+        h = self.robot.coriolisAndGravity()
+        
+        tau = M @ q_ddot_d + h
+        
+        return tau
 
 ################################################################################
 # Application
@@ -287,12 +334,15 @@ class Environment(Node):
         ########################################################################
 
         # TODO: create a cartesian controller
+        self.cartesian_controller = CartesianSpaceController(self.robot, "arm_right_7_joint", Kp, Kd)
         
+        self.X_goal = None
+
+
         ########################################################################
         # logging
         ########################################################################
         
-        # TODO: publish robot state every 0.01 s to ROS
         self.t_publish = 0.0
         self.publish_period = 0.01
         
@@ -313,10 +363,27 @@ class Environment(Node):
                 q_r_ddot = self.joint_spline(t, 2)
                 tau = self.joint_controller.update(q_r, q_r_dot, q_r_ddot)
             else:
+                if self.X_goal is None:
+                    hand_joint_id = self.robot.model.getJointId("arm_right_7_joint")
+                    self.X_goal = self.robot.data.oMi[hand_joint_id].copy()
+                    print("Switching to Cartesian control, saved goal pose")
+                    
+                self.cur_state = State.CART_SPLINE
+                
                 q_r = self.joint_spline(self.spline_duration)
                 q_r_dot = np.zeros_like(q_r)
                 q_r_ddot = np.zeros_like(q_r)
                 tau = self.joint_controller.update(q_r, q_r_dot, q_r_ddot)
+                
+                
+        elif self.cur_state == State.CART_SPLINE:
+            # Cartesian space control - hold the saved pose
+            X_r = self.X_goal
+            X_dot_r = np.zeros(6)
+            X_ddot_r = np.zeros(6)
+            
+            tau = self.cartesian_controller.update(X_r, X_dot_r, X_ddot_r)
+
                 
         else:
             tau = np.zeros(self.robot.actuatedJointCount())
