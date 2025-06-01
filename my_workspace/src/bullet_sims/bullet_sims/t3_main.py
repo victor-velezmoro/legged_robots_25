@@ -69,8 +69,8 @@ class Talos(Robot):
         super().__init__(simulator,
                         self.urdf,
                         self.model,
-                        [0, 0, 1.15],
-                        [0, 0, 0, 1],
+                        [0, 0, 1.15],  # Floating base initial position
+                        [0, 0, 0, 1],   # Floating base initial orientation [x,y,z,w]
                         q=q,
                         useFixedBase=useFixedBase,
                         verbose=verbose)
@@ -248,7 +248,7 @@ class CartesianSpaceController:
 class Environment(Node):
     def __init__(self):
         super().__init__('robot_environment')
-        
+                        
         # state
         self.cur_state = State.JOINT_SPLINE
         
@@ -258,6 +258,12 @@ class Environment(Node):
         self.joint_state_publisher = self.create_publisher(
             JointState, 
             'joint_states', 
+            10)
+        
+        self.pose_subscriber= self.create_subscription(
+            PoseStamped,
+            'hand_target_pose',
+            self.traget_pose_callback,
             10)
         
         ########################################################################
@@ -345,6 +351,15 @@ class Environment(Node):
         
         self.t_publish = 0.0
         self.publish_period = 0.01
+        
+    def traget_pose_callback(self, msg):
+        
+        pos = msg.pose.position
+        orientation = msg.pose.orientation
+        position = np.array([pos.x, pos.y, pos.z])
+        orientation = np.array([orientation.x, orientation.y, orientation.z, orientation.w])
+        self.X_goal = pin.XYZQUATToSE3(np.concatenate([position, orientation]))
+        self.get_logger().info(f"Received target pose: {self.X_goal}")
         
     def update(self, t, dt):
         

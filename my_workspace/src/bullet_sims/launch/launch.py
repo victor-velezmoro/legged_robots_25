@@ -46,18 +46,6 @@ def generate_launch_description():
                                   output='both',
                                   parameters=[params])
     
-    robot_state_publisher_node = launch_ros.actions.Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
-        output='screen',
-        parameters=[
-            {
-            "robot_description": robot_desc,
-            "use_sim_time": False, 
-        }
-    ],
-    )
     
     t3_node = Node(
         package='bullet_sims',
@@ -74,13 +62,20 @@ def generate_launch_description():
         output='screen',
         parameters=[{'use_sim_time': False}],
     )
+    interactive_marker_node = Node(
+        package='bullet_sims',
+        executable='interactive_marker_hand',
+        name='interactive_marker_hand',
+        output='screen',
+        parameters=[{'use_sim_time': False}],
+    )
 
     ld.add_action(rsp)
     #ld.add_action(robot_state_publisher_node)
     ld.add_action(rviz_node)
     ld.add_action(t3_node)
     #ld.add_action(t23_node)
-    
+    ld.add_action(interactive_marker_node)
 
     # Return the launch description
     return ld

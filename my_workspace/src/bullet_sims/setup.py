@@ -26,6 +26,7 @@ setup(
             't22 = bullet_sims.t22:main',
             't23 = bullet_sims.t23:main',
             't3_main = bullet_sims.t3_main:main',
+            'interactive_marker_hand = bullet_sims.interactive_marker_hand:main',
         ],
     },
 )
