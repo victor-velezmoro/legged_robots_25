@@ -52,7 +52,7 @@ class InteractiveMarkerNode(Node):
             self.get_logger().debug('Interactive marker created at right hand position')
             
             # Cancel the timer since we only need to do this once
-            self._hand_target_timer.cancel()
+            #self._hand_target_timer.cancel()
         except TransformException as e:
             self.get_logger().error(f'Could not transform from base_link to hand_target: {e}')
 

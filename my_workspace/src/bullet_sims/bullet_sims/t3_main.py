@@ -81,7 +81,7 @@ class Talos(Robot):
         
         
     def update(self):
-        # TODO: update base class, update pinocchio robot wrapper's kinematics
+        
         super().update()
         
         self.wrapper.forwardKinematics(self._q)
@@ -119,22 +119,49 @@ class Talos(Robot):
         return self._wrapper.data
     
     def publish(self):
-        # TODO: publish robot state to ros
+        
         
         if self.joint_state_publisher is None or self.node is None:
             return
             
         # Get current joint states
-        q = self._q  # joint positions
-        v = self._v  # joint velocities
-        tau = np.zeros(len(q))  # joint efforts
+        # self._q and self._v are in Pinocchio's internal joint order.
+        # self.actuatedJointNames() provides names in PyBullet's actuated joint order.
+        # We need to reorder self._q and self._v to match self.actuatedJointNames().
+
+        current_actuated_joint_names = self.actuatedJointNames()
+        num_act_joints = len(current_actuated_joint_names)
+
+        ordered_q = np.zeros(num_act_joints)
+        ordered_v = np.zeros(num_act_joints)
+
+        for i in range(num_act_joints):
+            name = current_actuated_joint_names[i]
+            try:
+                joint_id_pin = self.model.getJointId(name)
+                # For a fixed base robot, model.nq == num_act_joints.
+                # idx_q and idx_v are direct indices into self._q and self._v respectively.
+                idx_q_pin = self.model.joints[joint_id_pin].idx_q
+                idx_v_pin = self.model.joints[joint_id_pin].idx_v
+                
+                ordered_q[i] = self._q[idx_q_pin]
+                ordered_v[i] = self._v[idx_v_pin]
+            except KeyError:
+                # This might happen if a joint name from PyBullet isn't in Pinocchio's model.
+                # Should be logged if it occurs unexpectedly.
+                if self.node:
+                    self.node.get_logger().warn(f"Joint '{name}' from PyBullet actuated list not found in Pinocchio model during publishing, or issue with indexing.")
+                ordered_q[i] = 0.0 # Default to 0 if error
+                ordered_v[i] = 0.0
+        
+        tau = np.zeros(num_act_joints)  # Efforts should also match this order
         
         joint_state_msg = JointState()
         joint_state_msg.header = Header()
         joint_state_msg.header.stamp = self.node.get_clock().now().to_msg()
-        joint_state_msg.name = self.actuatedJointNames()
-        joint_state_msg.position = q.tolist()
-        joint_state_msg.velocity = v.tolist()
+        joint_state_msg.name = current_actuated_joint_names
+        joint_state_msg.position = ordered_q.tolist()
+        joint_state_msg.velocity = ordered_v.tolist()
         joint_state_msg.effort = tau.tolist()
         
         self.joint_state_publisher.publish(joint_state_msg)
@@ -200,8 +227,19 @@ class CartesianSpaceController:
 
         self.id = robot.model.getJointId(self.joint_name)
         
-    def update(self, X_r, X_dot_r, X_ddot_r):
+        #self.posture_controller = JointSpaceController(robot, Kp, Kd)
         
+        if robot._use_fixed_base:
+            # Use a reasonable home posture - you can adjust this
+            self.q_posture_ref = np.zeros(32)
+            self.q_posture_ref[14:22] = np.array([0, +0.45, 0, -1, 0, 0, 0, 0])  # left arm
+            self.q_posture_ref[22:30] = np.array([0, -0.45, 0, -1, 0, 0, 0, 0])  # right arm
+        else:
+            self.q_posture_ref = np.zeros(robot.actuatedJointCount())
+            
+
+    def update(self, X_r, X_dot_r, X_ddot_r):
+
         if self.robot._use_fixed_base:
             # For fixed base robot, all joints are actuated
             q = self.robot._q
@@ -213,7 +251,8 @@ class CartesianSpaceController:
             q = self.robot._q[self.robot._pos_idx_offset:]  # Skip floating base position (7 DOF)
             v = self.robot._v[self.robot._vel_idx_offset:] 
 
-        J = pin.computeJointJacobian(self.robot.model, self.robot.data, self.robot.q(), self.id)
+        J = pin.computeJointJacobian(self.robot.model, self.robot.data, self.robot._q, self.id)
+        
         if not self.robot._use_fixed_base:
             J = J[:, 6:]
         
@@ -232,13 +271,32 @@ class CartesianSpaceController:
             
         damp = 1e-6
         J_pinv = J.T @ np.linalg.inv(J @ J.T + damp * np.eye(6))
-        q_ddot_d = J_pinv @ (X_ddot_d - J_dot_q_dot)
+        
+        n_joints = len(q)
+        N = np.eye(n_joints) - J.T @ J_pinv.T
+        
+        q_ddot_cart = J_pinv @ (X_ddot_d - J_dot_q_dot)
+        
+        position_error = self.q_posture_ref - q
+        velocity_error = np.zeros(n_joints) - v 
+        
+        
+        
+        Kp_posture = 60.0  
+        Kd_posture = 0.5
+        q_ddot_posture = Kp_posture * position_error + Kd_posture * velocity_error
         
         M = self.robot.massMatrix()
         h = self.robot.coriolisAndGravity()
+
+        #tau_cart = M @ q_ddot_cart + h
+        #q_ddot_posture = self.posture_controller.update(self.q_posture_ref, np.zeros(n_joints), np.zeros(n_joints))
+        #removing M and h to not be uesd twice
+
+        tau = M @ (q_ddot_cart + N @ q_ddot_posture) + h
         
-        tau = M @ q_ddot_d + h
         
+
         return tau
 
 ################################################################################
@@ -359,7 +417,7 @@ class Environment(Node):
         position = np.array([pos.x, pos.y, pos.z])
         orientation = np.array([orientation.x, orientation.y, orientation.z, orientation.w])
         self.X_goal = pin.XYZQUATToSE3(np.concatenate([position, orientation]))
-        self.get_logger().info(f"Received target pose: {self.X_goal}")
+        self.get_logger().debug(f"Received target pose: {self.X_goal}")
         
     def update(self, t, dt):
         
@@ -381,6 +439,7 @@ class Environment(Node):
                 if self.X_goal is None:
                     hand_joint_id = self.robot.model.getJointId("arm_right_7_joint")
                     self.X_goal = self.robot.data.oMi[hand_joint_id].copy()
+                    self.cartesian_controller.q_posture_ref = self.robot._q.copy()
                     print("Switching to Cartesian control, saved goal pose")
                     
                 self.cur_state = State.CART_SPLINE
