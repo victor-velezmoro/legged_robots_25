@@ -7,3 +7,7 @@ Answer T1.2:
 
  Answer T1.3:
 When the cage spins, the force component of the wrench stays constant because it is independent of the frame's rotation. The torque component changes because it depends on the relative position vector, which varies with the rotation of the cage.
+
+
+Answer T2:
+t2_main is not a ros2 node because it is not a ros2 instance. It is a Python script that can be executed directly. The script does not contain any ROS2 node initialization code, such as `rclpy.init()` or `rclpy.spin()`, which are necessary for a script to function as a ROS2 node.
