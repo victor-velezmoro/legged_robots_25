@@ -124,10 +124,9 @@ class Talos(Robot):
         if self.joint_state_publisher is None or self.node is None:
             return
             
-        # Get current joint states
-        # self._q and self._v are in Pinocchio's internal joint order.
-        # self.actuatedJointNames() provides names in PyBullet's actuated joint order.
-        # We need to reorder self._q and self._v to match self.actuatedJointNames().
+        ##########
+        ##!!Reorder joint state message!!
+        ##########
 
         current_actuated_joint_names = self.actuatedJointNames()
         num_act_joints = len(current_actuated_joint_names)
@@ -139,19 +138,15 @@ class Talos(Robot):
             name = current_actuated_joint_names[i]
             try:
                 joint_id_pin = self.model.getJointId(name)
-                # For a fixed base robot, model.nq == num_act_joints.
-                # idx_q and idx_v are direct indices into self._q and self._v respectively.
                 idx_q_pin = self.model.joints[joint_id_pin].idx_q
                 idx_v_pin = self.model.joints[joint_id_pin].idx_v
                 
                 ordered_q[i] = self._q[idx_q_pin]
                 ordered_v[i] = self._v[idx_v_pin]
             except KeyError:
-                # This might happen if a joint name from PyBullet isn't in Pinocchio's model.
-                # Should be logged if it occurs unexpectedly.
                 if self.node:
                     self.node.get_logger().warn(f"Joint '{name}' from PyBullet actuated list not found in Pinocchio model during publishing, or issue with indexing.")
-                ordered_q[i] = 0.0 # Default to 0 if error
+                ordered_q[i] = 0.0 
                 ordered_v[i] = 0.0
         
         tau = np.zeros(num_act_joints)  # Efforts should also match this order
@@ -199,12 +194,11 @@ class JointSpaceController:
         position_error = q_r - q
         velocity_error = q_r_dot - v
 
-        # Compute the mass matrix
+        # mass matrix
         M = self.robot.massMatrix()
         h = self.robot.coriolisAndGravity()
         
 
-        # Compute the desired acceleration ( sign change for consistancy/best practice)
         tau = M @ (q_r_ddot + self.Kd @ velocity_error + self.Kp @ position_error) + h
 
         return tau
