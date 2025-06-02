@@ -1,9 +1,0 @@
-03 is wrong (z axis is flipped)
-05 is wrong (z axis is flipped)
-
-
-Answer T1.2: 
- When rotating the cube around the world, the angular velocity vector will remain fixed in the world frame, while the liner velocity vector rotates with the cube.This happens because the linear velocity is tied to the cube's local frame, and as the frame rotates, the linear velocity vector rotates with it.
-
- Answer T1.3:
-When the cage spins, the force component of the wrench stays constant because it is independent of the frame's rotation. The torque component changes because it depends on the relative position vector, which varies with the rotation of the cage.
