@@ -8,3 +8,6 @@ ros2 launch bullet_sims launch.py
 ```
 Just select the right file in the launch file. 
 
+
+When testing the interactive marker, wait till the JointControler finishes its task (reaches goal position), then you can move the cube. 
+
