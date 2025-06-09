@@ -52,11 +52,26 @@ def generate_launch_description():
         output='screen',
         parameters=[params],
     )
+    t4_one_leg_standing_node = Node(
+        package='tutorial_4',
+        executable='02_one_leg_stand',
+        name='t4_one_leg_standing_node',
+        output='screen',
+        parameters=[params],
+    )
+    t4_squating_node = Node(
+        package='tutorial_4',
+        executable='03_squating',
+        name='t4_squating_node',
+        output='screen',
+        parameters=[params],
+    )
 
 
     ld.add_action(rsp)
     ld.add_action(rviz_node)
-    ld.add_action(t4_standing_node)
-
+    #ld.add_action(t4_standing_node)
+    #ld.add_action(t4_one_leg_standing_node)
+    ld.add_action(t4_squating_node)
     # Return the launch description
     return ld

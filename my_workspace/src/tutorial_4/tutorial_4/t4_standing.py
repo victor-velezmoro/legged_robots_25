@@ -41,13 +41,15 @@ class Talos(Robot, Node):
         Node.__init__(self, 'talos_controller_node')
 
         # Determine initial base pose from q or use defaults from conf.q_home if q is similar
-        initial_base_pos = np.array([0.0, 0.0, 0.9]) # Default from conf.q_home
+        initial_base_pos = np.array([0.0, 0.0, 1.1]) # Default from conf.q_home
         initial_base_quat = np.array([0.0, 0.0, 0.0, 1.0]) # Default from conf.q_home (x,y,z,w)
 
-        if q is not None and len(q) >= 7:
-            initial_base_pos = q[0:3]
-            # PyBullet uses [x,y,z,w] for quaternions, Pinocchio q[3:7] is [qx,qy,qz,qw]
-            initial_base_quat = q[3:7] 
+        # if q is not None and len(q) >= 7:
+        #     initial_base_pos = q[0:3]
+        #     # PyBullet uses [x,y,z,w] for quaternions, Pinocchio q[3:7] is [qx,qy,qz,qw]
+        #     initial_base_quat = q[3:7] 
+        print(f"Initial base position: {initial_base_pos}")
+        print(f"Initial base orientation (quat): {initial_base_quat}")
 
         # Call Robot base class constructor
         Robot.__init__(self,
@@ -59,6 +61,9 @@ class Talos(Robot, Node):
                        q=q,
                        useFixedBase=False,
                        verbose=verbose)
+        
+        self.pin_model = model
+        self.pin_data = self.pin_model.createData()
         
         # ROS Publishers and Broadcasters
         self.joint_state_publisher = self.create_publisher(
@@ -72,9 +77,11 @@ class Talos(Robot, Node):
     def update(self):
         # Update base class (Robot)
         super().update()
+        # pin.forwardKinematics(self.pin_model, self.pin_data, self.q())
+        # pin.updateFramePlacements(self.pin_model, self.pin_data)
     
     def publish(self):
-        # Get current full configuration [base_pose_SE3, joint_angles] and velocity
+
         current_q_pin = self.q() 
         
         now = self.get_clock().now().to_msg()
@@ -134,11 +141,7 @@ def main():
     tsid_controller = TSIDWrapper(conf)
     
     # Instantiate Simulator
-    simulator = PybulletWrapper()
-    
-    # Add ground plane and set physics for contact
-    # pb.setGravity(0, 0, -9.81)
-    # ground_id = pb.loadURDF("plane.urdf", [0, 0, 0])
+    simulator = PybulletWrapper(sim_rate=1000)
     
     # Instantiate Robot (Talos node)
     robot_node = Talos(
@@ -151,7 +154,10 @@ def main():
     # Set the posture reference to home position in TSID controller
     # This tells TSID to drive the robot joints to the home configuration
     tsid_controller.setPostureRef(conf.q_actuated_home)
-    robot_node.get_logger().info("Set posture reference to home position")
+    robot_node.get_logger().debug("Set posture reference to home position")
+    robot_node.get_logger().debug(f"Initial base position: {robot_node.q()[:3]}")
+    robot_node.get_logger().debug(f"Initial base orientation: {robot_node.q()[3:7]}")
+    
     
     t_publish = 0.0 # For controlling publish rate
 
@@ -170,7 +176,9 @@ def main():
             # Update TSID controller
             q_pin_current = robot_node.q()
             v_pin_current = robot_node.v()
-            
+            robot_node.get_logger().debug(f"q_pin_current: {q_pin_current}")  # Log base pose
+            robot_node.get_logger().debug(f"goal posture: {conf.q_home}")  # Log goal posture
+
             # tsid_controller.update returns (tau, dv)
             tau_sol, dv_sol = tsid_controller.update(q_pin_current, v_pin_current, current_sim_time)
             
@@ -181,9 +189,9 @@ def main():
             # Debug info every second
             if current_sim_time % 1.0 < 0.001:
                 joint_error = np.linalg.norm(q_pin_current[7:] - conf.q_actuated_home)
-                robot_node.get_logger().info(f"Joint error to home: {joint_error:.4f}")
+                robot_node.get_logger().debug(f"Joint error to home: {joint_error:.4f}")
                 base_height = q_pin_current[2]
-                robot_node.get_logger().info(f"Base height: {base_height:.3f}m")
+                robot_node.get_logger().debug(f"Base height: {base_height:.3f}m")
 
             # Publish to ROS at a controlled rate (e.g., 30 Hz)
             if current_sim_time - t_publish >= (1.0 / 30.0):
@@ -199,4 +207,4 @@ def main():
     
 if __name__ == '__main__': 
     main()
-    
+
