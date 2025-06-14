@@ -281,10 +281,17 @@ class TSIDWrapper:
         '''
         SE3 task for left hand pose
         '''
-        # TODO: ADD a tsid.TaskSE3Equality for the left hand
-        # self.LH = # the frame id
-        # self.leftHandTask = # the motion task
-        # self.lh_ref = # the TrajectorySample (see: create_sample(...))
+        # TODO: ADD a tsidTaskSE3Equality for the left han
+        self.LH = robot.model().getFrameId(conf.lh_frame_name)
+        H_lh_ref = robot.framePosition(data, self.LH)
+
+        self.leftHandTask = tsid.TaskSE3Equality(
+            "task-left-hand", self.robot, self.conf.lh_frame_name)
+        self.leftHandTask.setKp(self.conf.kp_hand * np.array([1, 1, 1, 1, 1, 3]))
+        self.leftHandTask.setKd(2.0 * np.sqrt(self.conf.kp_hand) * np.array([1, 1, 1, 1, 1, 3]))
+        self.trajLH = tsid.TrajectorySE3Constant("traj-left-hand", H_lh_ref)
+
+        self.lh_ref = create_sample(H_lh_ref)
 
         '''
         SE3 task for right hand pose
@@ -293,6 +300,17 @@ class TSIDWrapper:
         # self.RH = # the frame id
         # self.rightHandTask = # the motion task
         # self.rh_ref = # the TrajectorySample (see: create_sample(...))
+        
+        self.RH = robot.model().getFrameId(conf.rh_frame_name)
+        H_rh_ref = robot.framePosition(data, self.RH)
+        
+        self.rightHandTask = tsid.TaskSE3Equality(
+            "task-right-hand", self.robot, self.conf.rh_frame_name)
+        self.rightHandTask.setKp(self.conf.kp_hand * np.array([1, 1, 1, 1, 1, 3]))
+        self.rightHandTask.setKd(2.0 * np.sqrt(self.conf.kp_hand) * np.array([1, 1, 1, 1, 1, 3]))
+        self.trajRH = tsid.TrajectorySE3Constant("traj-right-hand", H_rh_ref)
+        
+        self.rh_ref = create_sample(H_rh_ref)
 
         ########################################################################
         # torso task

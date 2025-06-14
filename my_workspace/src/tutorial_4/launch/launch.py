@@ -70,8 +70,8 @@ def generate_launch_description():
 
     ld.add_action(rsp)
     ld.add_action(rviz_node)
-    #ld.add_action(t4_standing_node)
+    ld.add_action(t4_standing_node)
     #ld.add_action(t4_one_leg_standing_node)
-    ld.add_action(t4_squating_node)
+    #ld.add_action(t4_squating_node)
     # Return the launch description
     return ld

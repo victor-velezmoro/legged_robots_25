@@ -142,23 +142,27 @@ def main():
     
     # Instantiate Simulator
     simulator = PybulletWrapper(sim_rate=1000)
+    q_init = np.zeros(30)
+    q_init = np.hstack([np.array([0, 0, 1.1, 0, 0, 0, 1]), q_init])
     
     # Instantiate Robot (Talos node)
     robot_node = Talos(
         simulator=simulator,
-        urdf=conf.urdf, # URDF path from config
-        model=tsid_controller.model, # Pinocchio model from TSIDWrapper
-        q=conf.q_home # Initial full configuration from config
+        urdf=conf.urdf, 
+        model=tsid_controller.model,
+        q=q_init 
     )
+    
+
     
     # Set the posture reference to home position in TSID controller
     # This tells TSID to drive the robot joints to the home configuration
-    tsid_controller.setPostureRef(conf.q_actuated_home)
+    #tsid_controller.setPostureRef(conf.q_actuated_home)
     robot_node.get_logger().debug("Set posture reference to home position")
     robot_node.get_logger().debug(f"Initial base position: {robot_node.q()[:3]}")
     robot_node.get_logger().debug(f"Initial base orientation: {robot_node.q()[3:7]}")
-    
-    
+
+
     t_publish = 0.0 # For controlling publish rate
 
     try:
@@ -178,8 +182,10 @@ def main():
             v_pin_current = robot_node.v()
             robot_node.get_logger().debug(f"q_pin_current: {q_pin_current}")  # Log base pose
             robot_node.get_logger().debug(f"goal posture: {conf.q_home}")  # Log goal posture
+            robot_node.get_logger().debug(f"current posture: {q_pin_current}")  # Log current posture
 
             # tsid_controller.update returns (tau, dv)
+            tsid_controller.setPostureRef(conf.q_actuated_home)
             tau_sol, dv_sol = tsid_controller.update(q_pin_current, v_pin_current, current_sim_time)
             
         

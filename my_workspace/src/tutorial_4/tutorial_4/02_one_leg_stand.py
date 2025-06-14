@@ -141,14 +141,15 @@ def main():
     
     # Instantiate Simulator
     simulator = PybulletWrapper(sim_rate=1000)
-    
+    q_init = np.zeros(30)
+    q_init = np.hstack([np.array([0, 0, 1.1, 0, 0, 0, 1]), q_init])
     
     
     robot_node = Talos(
         simulator=simulator,
         urdf=conf.urdf, # URDF path from config
         model=tsid_controller.model, # Pinocchio model from TSIDWrapper
-        q=conf.q_home # Initial full configuration from config
+        q=q_init # Initial full configuration from config
     )
     
     # After robot creation, add:
@@ -160,6 +161,8 @@ def main():
     robot_node.get_logger().info("Set posture reference to home position")
     
     t_publish = 0.0 # For controlling publish rate
+    reached_home = False
+    posture_threshold = 0.25
     try:
         while rclpy.ok():
             # Process ROS events (e.g., for subscribers or timers if any)
@@ -180,34 +183,44 @@ def main():
             # robot_node.get_logger().info(f"q_pin_current: {q_pin_current[:7]}")  # Log base pose
             # robot_node.get_logger().info(f"goal posture: {conf.q_actuated_home}")  # Log goal posture
             
-            # Get current COM and RF positions
+            if not reached_home:
+                joint_error = np.linalg.norm(q_pin_current[7:] - conf.q_actuated_home)
+                if joint_error < posture_threshold:
+                    reached_home = True
+                    robot_node.get_logger().info("Reached home posture, starting main tasks.")
+                    start_task_time = current_sim_time  # Mark when to start next phase
+                else:
+                    tau_sol, dv_sol = tsid_controller.update(q_pin_current, v_pin_current, current_sim_time)
+                    # robot_node._tau_cmd = tau_sol
+                    robot_node.setActuatedJointTorques(tau_sol)
+                    if current_sim_time % 1.0 < 0.001:
+                        robot_node.get_logger().info(f"Moving to home. Joint error: {joint_error:.4f}")
+                    if current_sim_time - t_publish >= (1.0 / 30.0):
+                        t_publish = current_sim_time
+                        robot_node.publish()
+                    continue  # Skip rest of loop until home is reached
+
+            # PHASE 2: Main tasks (CoM tracking, foot lifting, etc.)
+            duration = 2.0
             p_com = tsid_controller.comState().pos()
             p_RF = tsid_controller.get_placement_RF().translation
 
-            # Only update CoM reference for the first 2 seconds
-            if current_sim_time < duration:
-                # Set COM reference to XY position of right foot, keep current COM height
+            if current_sim_time - start_task_time < duration:
                 p_ref = np.array([p_RF[0], p_RF[1], p_com[2]])
                 tsid_controller.setComRefState(p_ref)
                 robot_node.get_logger().info(f"Set CoM reference to: {p_ref}")
             else:
-                # After 2 seconds, remove left foot contact and lift it
-                # Get current left foot pose
                 LF_pose = tsid_controller.get_placement_LF()
-                
-                # Set new reference 0.3 meters above current position
                 goal_pose = pin.SE3(LF_pose.rotation, LF_pose.translation + np.array([0.0, 0.0, 0.3]))
                 tsid_controller.set_LF_pose_ref(goal_pose)
-                
-                # Remove left foot contact 
-                if current_sim_time >= duration and current_sim_time < duration + 0.1:  # Small window to avoid repeated calls
+                if (current_sim_time - start_task_time) >= duration and (current_sim_time - start_task_time) < duration + 0.1:
                     tsid_controller.remove_contact_LF()
                     robot_node.get_logger().info("Removed left foot contact and set new reference")
 
             robot_node.get_logger().info(f"Current CoM position: {p_com}")
             robot_node.get_logger().info(f"Current RF position: {p_RF}")
 
-            # t
+            # Update TSID controller
             tau_sol, dv_sol = tsid_controller.update(q_pin_current, v_pin_current, current_sim_time)
             
             # Add logging to see if TSID is computing reasonable torques
