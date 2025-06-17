@@ -9,17 +9,10 @@ import numpy as np
 import pinocchio as pin
 import tsid
 
-import os
-import subprocess
-import time
-
-import numpy as np
-import pinocchio as pin
-import tsid
-
 ################################################################################
 # utiltity functions
 ################################################################################
+
 
 def create_sample(pos, vel=None, acc=None):
     if isinstance(pos, pin.SE3):
@@ -36,11 +29,14 @@ def create_sample(pos, vel=None, acc=None):
         sample.second_derivative(acc)
     return sample
 
+
 def vectorToSE3(vec):
     return pin.SE3(vec[3:].reshape(3, 3), vec[:3])
 
+
 def se3ToVector(s3e):
     return np.concatenate([s3e.translation, s3e.rotation.reshape(3*3)])
+
 
 def update_sample(sample, pos, vel=None, acc=None):
     if isinstance(pos, pin.SE3):
@@ -59,6 +55,7 @@ def update_sample(sample, pos, vel=None, acc=None):
 # TSID Wrapper
 ################################################################################
 
+
 class TSIDWrapper:
     ''' Standard TSID formulation for a humanoid robot standing on rectangular feet.
         - Center of mass task (CoM)
@@ -67,7 +64,7 @@ class TSIDWrapper:
         - 6d rigid contact constraint for both feet (6d rigid contact)
         - Motion task (position and orientation) for both feed 
         - Upper body torso task (keep the upper body horizontal)
-        
+
     After initialization, you need to call the update method with the current
     robot state (q, v) and the current time t. This will compute the torque
     commands and the accelerations for the robot.
@@ -277,7 +274,7 @@ class TSIDWrapper:
         T_rf_w = self.robot.framePosition(data, self.RF)
         self.rf_ref = create_sample(T_rf_w)
         self.rightFootTask.setReference(self.rf_ref)
-        
+
         '''
         SE3 task for left hand pose
         '''
@@ -327,11 +324,11 @@ class TSIDWrapper:
         formulation.addMotionTask(self.torsoTask, self.conf.w_torso, 1, 0.0)
 
         # torso reference is current
-        self.torso_id = self.model.getFrameId(conf.torso_frame_name)
-        H_torso_ref = robot.framePosition(data, self.torso_id)
+        torso_id = self.model.getFrameId(conf.torso_frame_name)
+        H_torso_ref = robot.framePosition(data, torso_id)
         self.torso_ref = create_sample(H_torso_ref)
         self.torsoTask.setReference(self.torso_ref)
-        
+
         assert self.model.existFrame(conf.base_frame_name)
         self.base_id = self.model.getFrameId(conf.base_frame_name)
 
@@ -402,7 +399,7 @@ class TSIDWrapper:
         self.contact_RF_active = True
         self.motion_RH_active = False
         self.motion_LH_active = False
-        
+
         self.sol = None
         self.tau = np.zeros(self.robot.na)
         self.acc = np.zeros(self.robot.nv)
@@ -413,15 +410,15 @@ class TSIDWrapper:
 
     def update(self, q, v, t, do_sove=True):
         hqp_data = self.formulation.computeProblemData(t, q, v)
-        
+
         if do_sove:
             sol = self.solver.solve(hqp_data)
-            if(sol.status!=0):
+            if (sol.status != 0):
                 print("QP problem could not be solved! Error code:", sol.status)
             self.sol = sol
             self.tau_sol = self.formulation.getActuatorForces(sol)
             self.dv_sol = self.formulation.getAccelerations(sol)
-        
+
         return self.tau_sol, self.dv_sol
 
     def integrate_dv(self, q, v, dv, dt):
@@ -479,13 +476,13 @@ class TSIDWrapper:
 
     def torsoReference(self):
         return self.torso_ref
-    
+
     def baseState(self, dv=None):
         data = self.formulation.data()
         T_frame_w = self.robot.framePosition(data, self.base_id)
         v_frame_w = self.robot.frameVelocity(data, self.base_id)
         if dv is not None:
-            a_frame_w = self.torso_task.getAcceleration(dv)
+            a_frame_w = self.torsoTask.getAcceleration(dv)
             return T_frame_w, v_frame_w, a_frame_w
         return T_frame_w, v_frame_w
 
@@ -506,9 +503,12 @@ class TSIDWrapper:
         self.rightFootTask.setReference(self.rf_ref)
 
     def set_RF_pos_ref(self, pos, vel=None, acc=None):
-        X = self.rf_ref.pos(); X[:3] = pos
-        V = self.rf_ref.vel(); V[:3] = vel
-        A = self.rf_ref.acc(); A[:3] = acc
+        X = self.rf_ref.pos()
+        X[:3] = pos
+        V = self.rf_ref.vel()
+        V[:3] = vel
+        A = self.rf_ref.acc()
+        A[:3] = acc
         update_sample(self.rf_ref, X, V, A)
         self.rightFootTask.setReference(self.rf_ref)
 
@@ -517,9 +517,12 @@ class TSIDWrapper:
         self.leftFootTask.setReference(self.lf_ref)
 
     def set_LF_pos_ref(self, pos, vel=None, acc=None):
-        X = self.lf_ref.pos(); X[:3] = pos
-        V = self.lf_ref.vel(); V[:3] = vel
-        A = self.lf_ref.acc(); A[:3] = acc
+        X = self.lf_ref.pos()
+        X[:3] = pos
+        V = self.lf_ref.vel()
+        V[:3] = vel
+        A = self.lf_ref.acc()
+        A[:3] = acc
         update_sample(self.lf_ref, X, V, A)
         self.leftFootTask.setReference(self.lf_ref)
 
@@ -528,9 +531,12 @@ class TSIDWrapper:
         self.rightHandTask.setReference(self.rh_ref)
 
     def set_RH_pos_ref(self, pos, vel, acc):
-        X = self.rh_ref.pos(); X[:3] = pos
-        V = self.rh_ref.vel(); V[:3] = vel
-        A = self.rh_ref.acc(); A[:3] = acc
+        X = self.rh_ref.pos()
+        X[:3] = pos
+        V = self.rh_ref.vel()
+        V[:3] = vel
+        A = self.rh_ref.acc()
+        A[:3] = acc
         update_sample(self.rh_ref, X, V, A)
         self.rightHandTask.setReference(self.rh_ref)
 
@@ -539,9 +545,12 @@ class TSIDWrapper:
         self.leftHandTask.setReference(self.lh_ref)
 
     def set_LH_pos_ref(self, pos, vel, acc):
-        X = self.lh_ref.pos(); X[:3] = pos
-        V = self.lh_ref.vel(); V[:3] = vel
-        A = self.lh_ref.acc(); A[:3] = acc
+        X = self.lh_ref.pos()
+        X[:3] = pos
+        V = self.lh_ref.vel()
+        V[:3] = vel
+        A = self.lh_ref.acc()
+        A[:3] = acc
         update_sample(self.lh_ref, X, V, A)
         self.leftHandTask.setReference(self.lh_ref)
 
@@ -618,7 +627,7 @@ class TSIDWrapper:
     ############################################################################
     # remove and add contact
     ############################################################################
-    
+
     def remove_contact_RF(self, transition_time=0.0):
         if self.contact_RF_active:
             # set ref to current pose
@@ -689,7 +698,8 @@ class TSIDWrapper:
 
     def add_motion_LH(self, transition_time=0.0):
         if not self.motion_LH_active:
-            H_lh_ref = self.robot.framePosition(self.formulation.data(), self.LH)
+            H_lh_ref = self.robot.framePosition(
+                self.formulation.data(), self.LH)
             update_sample(self.lh_ref, H_lh_ref)
             self.leftHandTask.setReference(self.lh_ref)
             self.formulation.addMotionTask(
@@ -699,7 +709,8 @@ class TSIDWrapper:
 
     def add_motion_RH(self, transition_time=0.0):
         if not self.motion_RH_active:
-            H_rh_ref = self.robot.framePosition(self.formulation.data(), self.RH)
+            H_rh_ref = self.robot.framePosition(
+                self.formulation.data(), self.RH)
             update_sample(self.rh_ref, H_rh_ref)
             self.rightHandTask.setReference(self.rh_ref)
             self.formulation.addMotionTask(

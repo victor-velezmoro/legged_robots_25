@@ -24,6 +24,10 @@ import tf2_ros
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String, Header
+import pinocchio as pin
+from pinocchio.robot_wrapper import RobotWrapper
+
+
 
 ################################################################################
 # settings
@@ -48,6 +52,8 @@ class Talos(Robot, Node):
         #     initial_base_pos = q[0:3]
         #     # PyBullet uses [x,y,z,w] for quaternions, Pinocchio q[3:7] is [qx,qy,qz,qw]
         #     initial_base_quat = q[3:7] 
+        print(f"Initial base position: {initial_base_pos}")
+        print(f"Initial base orientation (quat): {initial_base_quat}")
 
         # Call Robot base class constructor
         Robot.__init__(self,
@@ -75,16 +81,15 @@ class Talos(Robot, Node):
     def update(self):
         # Update base class (Robot)
         super().update()
-        
-        pin.forwardKinematics(self.pin_model, self.pin_data, self.q())
-        pin.updateFramePlacements(self.pin_model, self.pin_data)
-
+        # pin.forwardKinematics(self.pin_model, self.pin_data, self.q())
+        # pin.updateFramePlacements(self.pin_model, self.pin_data)
+    
     def publish(self):
-        # Get current full configuration [base_pose_SE3, joint_angles] and velocity
-        current_q_pin = self.q()
 
+        current_q_pin = self.q() 
+        
         now = self.get_clock().now().to_msg()
-
+        
         # Publish JointState with proper joint ordering
         joint_state_msg = JointState()
         joint_state_msg.header = Header()
@@ -140,105 +145,74 @@ def main():
     tsid_controller = TSIDWrapper(conf)
     
     # Instantiate Simulator
-    simulator = PybulletWrapper(sim_rate=1000)
+    simulator = PybulletWrapper()
     q_init = np.zeros(30)
     q_init = np.hstack([np.array([0, 0, 1.1, 0, 0, 0, 1]), q_init])
     
-    
+    # Instantiate Robot (Talos node)
     robot_node = Talos(
         simulator=simulator,
-        urdf=conf.urdf, # URDF path from config
-        model=tsid_controller.model, # Pinocchio model from TSIDWrapper
-        q=q_init # Initial full configuration from config
+        urdf=conf.urdf, 
+        model=tsid_controller.model,
+        q=q_init 
     )
     
-    # After robot creation, add:
-    robot_node.get_logger().info(f"Initial robot mass: {robot_node.pin_model.inertias[1].mass}")  # Check base mass
-    robot_node.get_logger().info(f"Robot total mass estimate: {sum([inertia.mass for inertia in robot_node.pin_model.inertias])}")
+
     
-    # Not sure if this is needed, but let's set it
-    tsid_controller.setPostureRef(conf.q_actuated_home)
-    robot_node.get_logger().info("Set posture reference to home position")
-    
+    # Set the posture reference to home position in TSID controller
+    # This tells TSID to drive the robot joints to the home configuration
+    #tsid_controller.setPostureRef(conf.q_actuated_home)
+    robot_node.get_logger().debug("Set posture reference to home position")
+    robot_node.get_logger().debug(f"Initial base position: {robot_node.q()[:3]}")
+    robot_node.get_logger().debug(f"Initial base orientation: {robot_node.q()[3:7]}")
+
+
     t_publish = 0.0 # For controlling publish rate
-    reached_home = False
-    posture_threshold = 0.25
+    start_com_shift = 2.0
+    time_to_lift_foot = 4.0
+
     try:
         while rclpy.ok():
             # Process ROS events (e.g., for subscribers or timers if any)
-            rclpy.spin_once(robot_node, timeout_sec=0.00001)
+            # rclpy.spin_once(robot_node, timeout_sec=0.00001)
 
             # Elapsed time
             current_sim_time = simulator.simTime()
 
             # Update the simulator and the robot
             simulator.step()
+            simulator.debug()
             robot_node.update() # This updates robot.q() and robot.v() from simulator
             
             # Update TSID controller
-            duration = 2.0  # Duration for the TSID controller
-            
             q_pin_current = robot_node.q()
             v_pin_current = robot_node.v()
-            # robot_node.get_logger().info(f"q_pin_current: {q_pin_current[:7]}")  # Log base pose
-            # robot_node.get_logger().info(f"goal posture: {conf.q_actuated_home}")  # Log goal posture
             
-            if not reached_home:
-                joint_error = np.linalg.norm(q_pin_current[7:] - conf.q_actuated_home)
-                if joint_error < posture_threshold:
-                    reached_home = True
-                    robot_node.get_logger().info("Reached home posture, starting main tasks.")
-                    start_task_time = current_sim_time  # Mark when to start next phase
-                else:
-                    tau_sol, dv_sol = tsid_controller.update(q_pin_current, v_pin_current, current_sim_time)
-                    # robot_node._tau_cmd = tau_sol
-                    robot_node.setActuatedJointTorques(tau_sol)
-                    if current_sim_time % 1.0 < 0.001:
-                        robot_node.get_logger().info(f"Moving to home. Joint error: {joint_error:.4f}")
-                    if current_sim_time - t_publish >= (1.0 / 30.0):
-                        t_publish = current_sim_time
-                        robot_node.publish()
-                    continue  # Skip rest of loop until home is reached
-
-            # PHASE 2: Main tasks (CoM tracking, foot lifting, etc.)
-            duration = 2.0
             p_com = tsid_controller.comState().pos()
             p_RF = tsid_controller.get_placement_RF().translation
-
-            if current_sim_time - start_task_time < duration:
+            
+            if current_sim_time >= start_com_shift:
                 p_ref = np.array([p_RF[0], p_RF[1], p_com[2]])
                 tsid_controller.setComRefState(p_ref)
                 robot_node.get_logger().info(f"Set CoM reference to: {p_ref}")
-            else:
+            if current_sim_time >= start_com_shift:
                 LF_pose = tsid_controller.get_placement_LF()
                 goal_pose = pin.SE3(LF_pose.rotation, LF_pose.translation + np.array([0.0, 0.0, 0.3]))
                 tsid_controller.set_LF_pose_ref(goal_pose)
-                if (current_sim_time - start_task_time) >= duration and (current_sim_time - start_task_time) < duration + 0.1:
+                if current_sim_time >= time_to_lift_foot and current_sim_time < time_to_lift_foot + 0.1:
                     tsid_controller.remove_contact_LF()
                     robot_node.get_logger().info("Removed left foot contact and set new reference")
+            
 
-            robot_node.get_logger().info(f"Current CoM position: {p_com}")
-            robot_node.get_logger().info(f"Current RF position: {p_RF}")
-
-            # Update TSID controller
             tau_sol, dv_sol = tsid_controller.update(q_pin_current, v_pin_current, current_sim_time)
-            
-            # Add logging to see if TSID is computing reasonable torques
-            robot_node.get_logger().info(f"Computed torques: {tau_sol[:6]}")  # First 6 joint torques
-            robot_node.get_logger().info(f"Max torque magnitude: {np.max(np.abs(tau_sol))}")
-            
-            # Store torque command for publishing
-            robot_node._tau_cmd = tau_sol
-        
-            # Command to the robot
             robot_node.setActuatedJointTorques(tau_sol)
 
             # Debug info every second
-            if current_sim_time % 1.0 < 0.001:
-                joint_error = np.linalg.norm(q_pin_current[7:] - conf.q_actuated_home)
-                robot_node.get_logger().info(f"Joint error to home: {joint_error:.4f}")
-                base_height = q_pin_current[2]
-                robot_node.get_logger().info(f"Base height: {base_height:.3f}m")
+            joint_error = np.linalg.norm(q_pin_current[7:] - conf.q_actuated_home) # Compare with conf.q_actuated_home
+            robot_node.get_logger().info(f"Joint error to home: {joint_error:.4f}")
+            base_height = q_pin_current[2]
+            robot_node.get_logger().debug(f"Base height: {base_height:.3f}m")
+            robot_node.get_logger().info(f"Current simulation time: {current_sim_time:.3f}s")
 
             # Publish to ROS at a controlled rate (e.g., 30 Hz)
             if current_sim_time - t_publish >= (1.0 / 30.0):
@@ -254,3 +228,4 @@ def main():
     
 if __name__ == '__main__': 
     main()
+

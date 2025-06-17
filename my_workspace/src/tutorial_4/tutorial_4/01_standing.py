@@ -18,9 +18,9 @@ import tutorial_4.config as conf
 # ROS
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 import tf2_ros
 from sensor_msgs.msg import JointState
-from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import TransformStamped
 
 ################################################################################
@@ -33,102 +33,141 @@ DO_PLOT = True
 # Robot
 ################################################################################
 
+
 class Talos(Robot):
-    def __init__(self, simulator, urdf, model, q=None, verbose=True, useFixedBase=True):
-        # Call base class constructor with floating base
+    def __init__(self, simulator, urdf, model, node, q=None, verbose=True, useFixedBase=True):
+        # call base class constructor
+
+        # Initial condition for the simulator an model
+        z_init = 1.15
+
         super().__init__(
             simulator,
-            filename=urdf,
-            model=model,
+            urdf,
+            model,
+            basePosition=[0, 0, z_init],
+            baseQuationerion=[0, 0, 0, 1],
             q=q,
             useFixedBase=useFixedBase,
-            verbose=verbose
-        )
-        # ROS publisher for joint states
-        self.joint_pub = rclpy.node.Node('talos_joint_state_publisher').create_publisher(
-            JointState, 'joint_states', 10)
-        
-        # TF broadcaster for base_link -> world
-        self.tf_broadcaster = tf2_ros.TransformBroadcaster(rclpy.node.Node('talos_tf_broadcaster'))
+            verbose=verbose)
+
+        self.node = node
+
+        # add publisher
+        self.pub_joint = self.node.create_publisher(
+            JointState, "/joint_states", 10)
+
+        self.joint_msg = JointState()
+        self.joint_msg.name = self.actuatedJointNames()
+
+        # add tf broadcaster
+        self.br = tf2_ros.TransformBroadcaster(self.node)
 
     def update(self):
-        # Update base class (updates state from pybullet)
+        # update base class
         super().update()
 
-    def publish(self, T_b_w):
-        # Publish joint states
-        msg = JointState()
-        msg.header.stamp = rclpy.clock.Clock().now().to_msg()
-        msg.name = self.actuatedJointNames()
-        msg.position = self.actuatedJointPosition().tolist()
-        msg.velocity = self.actuatedJointVelocity().tolist()
-        self.joint_pub.publish(msg)
+    def publish(self, T_b_w, tau):
+        # publish jointstate
+        self.joint_msg.header.stamp = self.node.get_clock().now().to_msg()
+        self.joint_msg.position = self.actuatedJointPosition().tolist()
+        self.joint_msg.velocity = self.actuatedJointVelocity().tolist()
+        self.joint_msg.effort = tau.tolist()
 
-        # Broadcast transformation T_b_w (Pinocchio SE3)
-        tf_msg = tf2_ros.TransformStamped()
-        tf_msg.header.stamp = rclpy.clock.Clock().now().to_msg()
+        self.pub_joint.publish(self.joint_msg)
+
+        # broadcast transformation T_b_w
+        tf_msg = TransformStamped()
+        tf_msg.header.stamp = self.node.get_clock().now().to_msg()
         tf_msg.header.frame_id = "world"
-        tf_msg.child_frame_id = "base_link"
-        tf_msg.transform.translation.x = float(T_b_w.translation[0])
-        tf_msg.transform.translation.y = float(T_b_w.translation[1])
-        tf_msg.transform.translation.z = float(T_b_w.translation[2])
-        # Convert rotation matrix to quaternion
-        from scipy.spatial.transform import Rotation as R
-        quat = R.from_matrix(T_b_w.rotation).as_quat()
-        tf_msg.transform.rotation.x = float(quat[0])
-        tf_msg.transform.rotation.y = float(quat[1])
-        tf_msg.transform.rotation.z = float(quat[2])
-        tf_msg.transform.rotation.w = float(quat[3])
-        self.tf_broadcaster.sendTransform(tf_msg)
+        tf_msg.child_frame_id = self.baseName()
+
+        tf_msg.transform.translation.x = T_b_w.translation[0]
+        tf_msg.transform.translation.y = T_b_w.translation[1]
+        tf_msg.transform.translation.z = T_b_w.translation[2]
+
+        q = pin.Quaternion(T_b_w.rotation)
+        q.normalize()
+        tf_msg.transform.rotation.x = q.x
+        tf_msg.transform.rotation.y = q.y
+        tf_msg.transform.rotation.z = q.z
+        tf_msg.transform.rotation.w = q.w
+
+        self.br.sendTransform(tf_msg)
+
+
+################################################################################
+# Application
+################################################################################
+
+
+class Environment(Node):
+    def __init__(self):
+        super().__init__('tutorial_4_standing_node')
+
+        # init TSIDWrapper
+        self.tsid_wrapper = TSIDWrapper(conf)
+
+        # init Simulator
+        self.simulator = PybulletWrapper()
+
+        q_init = np.hstack([np.array([0, 0, 1.15, 0, 0, 0, 1]),
+                           np.zeros_like(conf.q_actuated_home)])
+
+        # init ROBOT
+        self.robot = Talos(
+            self.simulator,
+            conf.urdf,
+            self.tsid_wrapper.model,
+            self,
+            q=q_init,
+            verbose=True,
+            useFixedBase=False)
+
+        self.t_publish = 0.0
+
+    def update(self):
+        # elaped time
+        t = self.simulator.simTime()
+
+        # update the simulator and the robot
+        self.simulator.step()
+        self.simulator.debug()
+        self.robot.update()
+
+        # update TSID controller
+        tau_sol, _ = self.tsid_wrapper.update(
+            self.robot.q(), self.robot.v(), t)
+
+        # command to the robot
+        self.robot.setActuatedJointTorques(tau_sol)
+
+        # publish to ros
+        if t - self.t_publish > 1./30.:
+            self.t_publish = t
+            # get current BASE Pose
+            T_b_w, _ = self.tsid_wrapper.baseState()
+            self.robot.publish(T_b_w, tau_sol)
+
 
 ################################################################################
 # main
 ################################################################################
 
-def main(): 
-    rclpy.init()
-    node = rclpy.create_node('tutorial_4_standing_node')
 
-    # Instantiate TSIDWrapper
-    tsid = TSIDWrapper(conf)
+def main(args=None):
+    rclpy.init(args=args)
+    env = Environment()
+    try:
+        while rclpy.ok():
+            env.update()
 
-    # Instantiate Simulator
-    simulator = PybulletWrapper()
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        env.destroy_node()
+        rclpy.shutdown()
 
-    # Instantiate Talos robot with floating base
-    robot = Talos(
-        simulator=simulator,
-        urdf=conf.urdf,
-        model=tsid.robot.model(),
-        q=conf.q_home,
-        verbose=True,
-        useFixedBase=False
-    )
 
-    t_publish = 0.0
-
-    while rclpy.ok():
-        # elapsed time
-        t = simulator.simTime()
-
-        # Update simulator and robot
-        simulator.step()
-        robot.update()
-
-        # Update TSID controller
-        q = robot.q()
-        v = robot.v()
-        tau_sol, dv_sol = tsid.update(q, v, t)
-
-        # Command to the robot
-        robot.setActuatedJointTorques(tau_sol)
-
-        # Publish to ROS at 30Hz
-        if t - t_publish > 1./30.:
-            t_publish = t
-            # Get current BASE Pose from TSID
-            T_b_w, _ = tsid.baseState()
-            robot.publish(T_b_w)
-
-if __name__ == '__main__': 
+if __name__ == '__main__':
     main()
