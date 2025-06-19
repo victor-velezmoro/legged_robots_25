@@ -24,6 +24,11 @@ import tf2_ros
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String, Header
+import pinocchio as pin
+from pinocchio.robot_wrapper import RobotWrapper
+import time
+
+
 
 ################################################################################
 # settings
@@ -48,6 +53,8 @@ class Talos(Robot, Node):
         #     initial_base_pos = q[0:3]
         #     # PyBullet uses [x,y,z,w] for quaternions, Pinocchio q[3:7] is [qx,qy,qz,qw]
         #     initial_base_quat = q[3:7] 
+        print(f"Initial base position: {initial_base_pos}")
+        print(f"Initial base orientation (quat): {initial_base_quat}")
 
         # Call Robot base class constructor
         Robot.__init__(self,
@@ -75,14 +82,15 @@ class Talos(Robot, Node):
     def update(self):
         # Update base class (Robot)
         super().update()
-        
+        # pin.forwardKinematics(self.pin_model, self.pin_data, self.q())
+        # pin.updateFramePlacements(self.pin_model, self.pin_data)
     
     def publish(self):
-        # Get current full configuration [base_pose_SE3, joint_angles] and velocity
-        current_q_pin = self.q()
 
+        current_q_pin = self.q() 
+        
         now = self.get_clock().now().to_msg()
-
+        
         # Publish JointState with proper joint ordering
         joint_state_msg = JointState()
         joint_state_msg.header = Header()
@@ -138,17 +146,19 @@ def main():
     tsid_controller = TSIDWrapper(conf)
     
     # Instantiate Simulator
-    simulator = PybulletWrapper(sim_rate=1000)
+    simulator = PybulletWrapper()
+    q_init = np.zeros(30)
+    q_init = np.hstack([np.array([0, 0, 1.1, 0, 0, 0, 1]), q_init])
     
-    # Instantiate Talos robot with floating base
+    # Instantiate Robot (Talos node)
     robot_node = Talos(
         simulator=simulator,
-        urdf=conf.urdf, # URDF path from config
-        model=tsid_controller.model, # Pinocchio model from TSIDWrapper
-        q=conf.q_home # Initial full configuration from config
+        urdf=conf.urdf, 
+        model=tsid_controller.model,
+        q=q_init 
     )
     
-     # Data storage for plotting
+    # Data storage for plotting
     time_log = []
     com_ref_log = []
     com_tsid_log = []
@@ -159,44 +169,69 @@ def main():
     a_com_ref_log = []
     a_com_tsid_log = []
     a_com_sim_log = []
-
+ 
     prev_v_com_sim = None
     prev_time = None
-    
-    # After robot creation, add:
-    robot_node.get_logger().info(f"Initial robot mass: {robot_node.pin_model.inertias[1].mass}")  # Check base mass
-    robot_node.get_logger().info(f"Robot total mass estimate: {sum([inertia.mass for inertia in robot_node.pin_model.inertias])}")
-    
-    # Not sure if this is needed, but let's set it
-    tsid_controller.setPostureRef(conf.q_actuated_home)
-    robot_node.get_logger().info("Set posture reference to home position")
-    
+
+
+    robot_node.get_logger().debug("Set posture reference to home position")
+    robot_node.get_logger().debug(f"Initial base position: {robot_node.q()[:3]}")
+    robot_node.get_logger().debug(f"Initial base orientation: {robot_node.q()[3:7]}")
+
     t_publish = 0.0 # For controlling publish rate
+    start_com_shift = 1.0
+    time_to_lift_foot = 3.0
+    squat_start_time = 6.0
+    circle_motion_start_time = 8.0
+    rh_motion_activated = False
+    
+    # Circle parameters
+    c = np.array([0.4, -0.2, 1.1])  # center
+    r = 0.2  # radius
+    f = 0.1  # frequency (Hz)
+    omega = 2 * np.pi * f  # angular frequency
+    
+    # Generate trajectory points for visualization (one full circle)
+    t_viz = np.linspace(0, 1/f, 100)  # 100 points over one period
+    X_traj = c[0] + np.zeros_like(t_viz)  # x stays constant (Y-Z plane)
+    Y_traj = c[1] + r * np.cos(omega * t_viz)
+    Z_traj = c[2] + r * np.sin(omega * t_viz)
+    
+    # Add trajectory visualization
+    simulator.addGlobalDebugTrajectory(X_traj, Y_traj, Z_traj)
+    
+    # Set right hand task gains
+    tsid_controller.rightHandTask.setKp(100*np.array([1,1,1,0,0,0]))
+    tsid_controller.rightHandTask.setKd(2.0*np.sqrt(100)*np.array([1,1,1,0,0,0]))
+    
+    start_time = time.time()
+
+
     try:
         while rclpy.ok():
             # Process ROS events (e.g., for subscribers or timers if any)
-            rclpy.spin_once(robot_node, timeout_sec=0.00001)
+            # rclpy.spin_once(robot_node, timeout_sec=0.00001)
 
             # Elapsed time
             current_sim_time = simulator.simTime()
+            
+            elapsed_time = current_sim_time - start_time
 
             # Update the simulator and the robot
             simulator.step()
+            simulator.debug()
             robot_node.update() # This updates robot.q() and robot.v() from simulator
             
             # Update TSID controller
-            time_buffer = 0.0
-            duration = 2.0 + time_buffer  # Duration for the TSID controller
-            squat_start_time = 4.0 + time_buffer  # Start squat motion after 4 seconds
-            circle_motion_start_time = 8.0 + time_buffer  # Start circle motion after 8 seconds
-            amplitude = 0.01  # Amplitude of the squat motion
+            amplitude = 0.05  # Amplitude of the squat motion
             frequency = 0.5  # Frequency of the squat motion
             
+            # Update TSID controller
             q_pin_current = robot_node.q()
             v_pin_current = robot_node.v()
-
             
-            # Simulator (PyBullet) CoM
+            
+            #  Simulator (PyBullet) CoM
             com_sim = robot_node.baseWorldPosition()
             v_com_sim = robot_node.baseWorldLinearVeloctiy()
             com_sim_log.append(np.array(com_sim))
@@ -210,90 +245,6 @@ def main():
             prev_v_com_sim = v_com_sim
             prev_time = current_sim_time
             
-            
-            # Get current COM and Right foot positions
-            p_com = tsid_controller.comState().pos()
-            p_RF = tsid_controller.get_placement_RF().translation
-
-            #Only update CoM reference for the first 2 seconds
-            if current_sim_time > time_buffer and current_sim_time < duration:
-                # Set COM reference to XY position of right foot, keep current COM height
-                p_ref = np.array([p_RF[0], p_RF[1], p_com[2]])
-                tsid_controller.setComRefState(p_ref)
-            if current_sim_time >= duration:
-                # After 2 seconds, remove left foot contact and lift it
-                # Get current left foot pose
-                LF_pose = tsid_controller.get_placement_LF()
-                
-                # Set new reference 0.3 meters above current position
-                goal_pose = pin.SE3(LF_pose.rotation, LF_pose.translation + np.array([0.0, 0.0, 0.3]))
-                tsid_controller.set_LF_pose_ref(goal_pose)
-                
-                # Remove left foot contact 
-                if current_sim_time >= duration and current_sim_time < duration + 0.1:  # Small window to avoid repeated calls
-                    tsid_controller.remove_contact_LF()
-                    robot_node.get_logger().info("Removed left foot contact and set new reference")
-
-            if current_sim_time >= squat_start_time:
-                robot_node.get_logger().info("sim time: " + str(current_sim_time))
-                
-                t_squat = current_sim_time - squat_start_time
-                squat_z = amplitude * np.sin(2 * np.pi * frequency * t_squat)
-                squat_dz = amplitude * 2 * np.pi * frequency * np.cos(2 * np.pi * frequency * t_squat)
-                squat_ddz = -amplitude * (2 * np.pi * frequency) ** 2 * np.sin(2 * np.pi * frequency * t_squat)
-
-                p_com_ref = np.array([p_com[0], p_com[1], conf.q_home[2] + squat_z]) #maybe home is not the best choice here
-                v_com_ref = np.array([0.0, 0.0, squat_dz])
-                a_com_ref = np.array([0.0, 0.0, squat_ddz])
-
-                tsid_controller.setComRefState(p_com_ref, v_com_ref, a_com_ref)
-
-            if current_sim_time >= circle_motion_start_time:
-    
-                t_circle = current_sim_time - circle_motion_start_time
-                radius = 0.2
-                omega = 2 * np.pi * 0.1  # 0.1 Hz
-                center = np.array([0.4, -0.2, 1.1])
-                # p = c + [0, r cos(ωt), r sin(ωt)]
-                p_circle_ref = center + np.array([0.0, radius * np.cos(omega * t_circle), radius * np.sin(omega * t_circle)])
-
-                simulator.addGlobalDebugTrajectory(
-                    p_circle_ref,
-                    np.array([0.0, 0.0, 1.0]),
-                    0.1,
-                    color=[1.0, 0.0, 0.0, 1.0]
-                )
-
-                # Activate right hand task only once
-                if not rh_motion_activated:
-                    # Set orientation gains to zero
-                    tsid_controller.rightHandTask.setKp(100 * np.array([1, 1, 1, 0, 0, 0]))
-                    tsid_controller.rightHandTask.setKd(2.0 * np.sqrt(100) * np.array([1, 1, 1, 0, 0, 0]))
-                    tsid_controller.add_motion_RH()  # Activate the right hand task
-                    rh_motion_activated = True
-
-                tsid_controller.set_RH_pos_ref(p_circle_ref)
-
-            tau_sol, dv_sol = tsid_controller.update(q_pin_current, v_pin_current, current_sim_time)
-            robot_node.setActuatedJointTorques(tau_sol)
-
-            # robot_node.get_logger().info(f"Current CoM position: {p_com}")
-            # robot_node.get_logger().info(f"Current Right Foot position: {p_RF}")
-            # robot_node.get_logger().info(f"Set CoM reference to: {p_ref}")
-            # robot_node.get_logger().info(f"Current ref CoM position: {tsid_controller.comReference().pos()}")
-            # robot_node.get_logger().info(f"Current ref CoM velocity: {tsid_controller.comReference().vel()}")
-            # robot_node.get_logger().info(f"Current ref CoM acceleration: {tsid_controller.comReference().acc()}")
-
-
-            # Add logging to see if TSID is computing reasonable torques
-            robot_node.get_logger().debug(f"Computed torques: {tau_sol[:6]}")  # First 6 joint torques
-            robot_node.get_logger().debug(f"Max torque magnitude: {np.max(np.abs(tau_sol))}")
-            robot_node.get_logger().debug(f"Joint velocities: {v_pin_current[7:]}")
-
-            # Command to the robot
-            robot_node.setActuatedJointTorques(tau_sol)
-            
-            # TSID reference and state
             time_log.append(current_sim_time)
             com_ref = tsid_controller.comReference()
             com_state = tsid_controller.comState()
@@ -304,14 +255,78 @@ def main():
             com_tsid_log.append(com_state.pos().copy())
             v_com_tsid_log.append(com_state.vel().copy())
             a_com_tsid_log.append(np.zeros(3))
+            
+            
+            p_com = tsid_controller.comState().pos()
+            p_RF = tsid_controller.get_placement_RF().translation
+            
+            if current_sim_time >= start_com_shift:
+                p_ref = np.array([p_RF[0], p_RF[1], p_com[2]])
+                tsid_controller.setComRefState(p_ref)
+                robot_node.get_logger().info(f"Set CoM reference to: {p_ref}")
+            if current_sim_time >= start_com_shift:
+                LF_pose = tsid_controller.get_placement_LF()
+                goal_pose = pin.SE3(LF_pose.rotation, LF_pose.translation + np.array([0.0, 0.0, 0.3]))
+                tsid_controller.set_LF_pose_ref(goal_pose)
+                if current_sim_time >= time_to_lift_foot and current_sim_time < time_to_lift_foot + 0.1:
+                    tsid_controller.remove_contact_LF()
+                    robot_node.get_logger().info("Removed left foot contact and set new reference")
+                    
+            if current_sim_time >= squat_start_time:
+                
+                t_squat = current_sim_time - squat_start_time
+                squat_z = amplitude * np.sin(2 * np.pi * frequency * t_squat)
+                squat_dz = amplitude * 2 * np.pi * frequency * np.cos(2 * np.pi * frequency * t_squat)
+                squat_ddz = -amplitude * (2 * np.pi * frequency) ** 2 * np.sin(2 * np.pi * frequency * t_squat)
 
+                p_com_ref = np.array([p_com[0], p_com[1], p_com[2] + squat_z]) #maybe home is not the best choice here
+                v_com_ref = np.array([0.0, 0.0, squat_dz])
+                a_com_ref = np.array([0.0, 0.0, squat_ddz])
+
+                tsid_controller.setComRefState(p_com_ref, v_com_ref, a_com_ref)
+                
+            if current_sim_time >= circle_motion_start_time and not tsid_controller.motion_RH_active:
+                # Activate right hand motion task
+                tsid_controller.add_motion_RH()
+                print("Right hand motion task activated!")
+            
+            if current_sim_time >= circle_motion_start_time:  # After 6 seconds
+                # Calculate current position on circle
+                t = current_sim_time - circle_motion_start_time  # time since circle started
+                print(f"Current time: {current_sim_time:.2f}s, t: {t:.2f}s")
+                pos = np.array([
+                    c[0],  # x constant (Y-Z plane)
+                    c[1] + r * np.cos(omega * t),
+                    c[2] + r * np.sin(omega * t)
+                ])
+                
+                # Calculate velocity for smooth motion
+                vel = np.array([
+                    0.0,  # x velocity is zero
+                    -r * omega * np.sin(omega * t),
+                    r * omega * np.cos(omega * t)
+                ])
+                
+                # Calculate acceleration
+                acc = np.array([
+                    0.0,  # x acceleration is zero
+                    -r * omega**2 * np.cos(omega * t),
+                    -r * omega**2 * np.sin(omega * t)
+                ])
+                
+                # Update right hand reference
+                tsid_controller.set_RH_pos_ref(pos, vel, acc)
+
+            tau_sol, dv_sol = tsid_controller.update(q_pin_current, v_pin_current, current_sim_time)
+            robot_node.setActuatedJointTorques(tau_sol)
 
             # Debug info every second
-            if current_sim_time % 1.0 < 0.001:
-                joint_error = np.linalg.norm(q_pin_current[7:] - conf.q_actuated_home)
-                robot_node.get_logger().debug(f"Joint error to home: {joint_error:.4f}")
-                base_height = q_pin_current[2]
-                robot_node.get_logger().debug(f"Base height: {base_height:.3f}m")
+            joint_error = np.linalg.norm(q_pin_current[7:] - conf.q_actuated_home) # Compare with conf.q_actuated_home
+            robot_node.get_logger().debug(f"Joint error to home: {joint_error:.4f}")
+            base_height = q_pin_current[2]
+            robot_node.get_logger().debug(f"Base height: {base_height:.3f}m")
+            robot_node.get_logger().info(f"Current simulation time: {current_sim_time:.3f}s")
+            
 
             # Publish to ROS at a controlled rate (e.g., 30 Hz)
             if current_sim_time - t_publish >= (1.0 / 30.0):
@@ -325,7 +340,6 @@ def main():
         robot_node.destroy_node()
         rclpy.shutdown()
         
-        # --- Plotting ---
         def ensure_2d(arr):
             arr = np.array(arr)
             if arr.ndim == 1:
@@ -388,8 +402,10 @@ def main():
             axs[2, i].grid()
 
         plt.tight_layout()
-        plt.savefig('com_analysis.png', dpi=300)
+        plt.savefig('com_analysis2.png', dpi=300)
         plt.show()
+        
     
 if __name__ == '__main__': 
     main()
+

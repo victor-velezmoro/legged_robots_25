@@ -324,8 +324,8 @@ class TSIDWrapper:
         formulation.addMotionTask(self.torsoTask, self.conf.w_torso, 1, 0.0)
 
         # torso reference is current
-        torso_id = self.model.getFrameId(conf.torso_frame_name)
-        H_torso_ref = robot.framePosition(data, torso_id)
+        self.torso_id = self.model.getFrameId(conf.torso_frame_name)
+        H_torso_ref = robot.framePosition(data, self.torso_id)
         self.torso_ref = create_sample(H_torso_ref)
         self.torsoTask.setReference(self.torso_ref)
 
