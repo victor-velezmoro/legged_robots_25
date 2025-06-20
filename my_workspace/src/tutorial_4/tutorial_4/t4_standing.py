@@ -402,7 +402,7 @@ def main():
             axs[2, i].grid()
 
         plt.tight_layout()
-        plt.savefig('com_analysis2.png', dpi=300)
+        plt.savefig('com_analysis3.png', dpi=300)
         plt.show()
         
     
