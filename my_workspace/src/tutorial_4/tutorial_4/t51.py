@@ -28,9 +28,11 @@ import pinocchio as pin
 from pinocchio.robot_wrapper import RobotWrapper
 from enum import Enum
 
+import matplotlib.pyplot as plt
+from collections import deque
+import threading
 
-
-DO_PLOT = True
+DO_Plot = False
 
 class PushDirection():
     RIGHT = np.array([0.0, -1.0, 0.0])  
@@ -47,13 +49,10 @@ class PushDirection():
             return "BACK"
         return "UNKNOWN"
     
-    
-
 class PushState(Enum):
     WAITING = "waiting"
     PUSHING = "pushing"
     COMPLETED = "completed"
-
 
 class PushStateMachine:
     def __init__(self,t_pause, tpush, logger):
@@ -62,9 +61,9 @@ class PushStateMachine:
         self.logger = logger
         
         self.push_sequence = [
-            {"direction": PushDirection.RIGHT, "magnitude": 15.0},
-            {"direction": PushDirection.LEFT, "magnitude": 15.0},
-            {"direction": PushDirection.BACK, "magnitude": 12.0}
+            {"direction": PushDirection.RIGHT, "magnitude": 25.0},
+            {"direction": PushDirection.LEFT, "magnitude": 25.0},
+            {"direction": PushDirection.BACK, "magnitude": 25.0}
         ]
         # State tracking
         self.state = PushState.WAITING
@@ -143,7 +142,70 @@ class PushStateMachine:
         direction_name = current_push["direction"]
         return f"State: {self.state.value}, Push: {self.current_push_index + 1}/3 ({direction_name})"
    
-   
+class DataRecorder:
+    def __init__(self, max_samples=10000):
+        self.max_samples = max_samples
+        self.time_data = deque(maxlen=max_samples)
+        self.com_x = deque(maxlen=max_samples)
+        self.com_y = deque(maxlen=max_samples)
+        self.zmp_x = deque(maxlen=max_samples)
+        self.zmp_y = deque(maxlen=max_samples)
+        self.cmp_x = deque(maxlen=max_samples)
+        self.cmp_y = deque(maxlen=max_samples)
+        self.cp_x = deque(maxlen=max_samples)
+        self.cp_y = deque(maxlen=max_samples)
+        
+    def record(self, time, com_pos, zmp_pos, cmp_pos, cp_pos):
+        self.time_data.append(time)
+        self.com_x.append(com_pos[0])
+        self.com_y.append(com_pos[1])
+        self.zmp_x.append(zmp_pos[0])
+        self.zmp_y.append(zmp_pos[1])
+        self.cmp_x.append(cmp_pos[0])
+        self.cmp_y.append(cmp_pos[1])
+        self.cp_x.append(cp_pos[0])
+        self.cp_y.append(cp_pos[1])
+    
+    def save_data(self, filename="robot_data.npz"):
+        np.savez(filename,
+                 time=np.array(self.time_data),
+                 com_x=np.array(self.com_x), com_y=np.array(self.com_y),
+                 zmp_x=np.array(self.zmp_x), zmp_y=np.array(self.zmp_y),
+                 cmp_x=np.array(self.cmp_x), cmp_y=np.array(self.cmp_y),
+                 cp_x=np.array(self.cp_x), cp_y=np.array(self.cp_y))
+        print(f"Data saved to {filename}")
+    
+    def plot_realtime(self):
+        if len(self.time_data) < 2:
+            return
+            
+        plt.clf()
+        
+        # Plot X components
+        plt.subplot(2, 1, 1)
+        plt.plot(self.time_data, self.com_x, 'b-', label='CoM X', linewidth=2)
+        plt.plot(self.time_data, self.zmp_x, 'r-', label='ZMP X', linewidth=1)
+        plt.plot(self.time_data, self.cmp_x, 'g-', label='CMP X', linewidth=1)
+        plt.plot(self.time_data, self.cp_x, 'm-', label='CP/DCM X', linewidth=1)
+        plt.ylabel('X Position (m)')
+        plt.legend()
+        plt.grid(True)
+        plt.title('Ground Reference Points and CoM - X Components')
+        
+        # Plot Y components
+        plt.subplot(2, 1, 2)
+        plt.plot(self.time_data, self.com_y, 'b-', label='CoM Y', linewidth=2)
+        plt.plot(self.time_data, self.zmp_y, 'r-', label='ZMP Y', linewidth=1)
+        plt.plot(self.time_data, self.cmp_y, 'g-', label='CMP Y', linewidth=1)
+        plt.plot(self.time_data, self.cp_y, 'm-', label='CP/DCM Y', linewidth=1)
+        plt.xlabel('Time (s)')
+        plt.ylabel('Y Position (m)')
+        plt.legend()
+        plt.grid(True)
+        
+        plt.tight_layout()
+        plt.pause(0.01)
+        
 class ForceVisualizer(Node, Robot):
     def __init__(self, simulator):
         self.simulator = simulator
@@ -165,6 +227,47 @@ class ForceVisualizer(Node, Robot):
             self.simulator.removeDebugItem(self.line_id)
             self.line_id = -1
 
+class AnkleController:
+    def __init__(self):
+        self.Kx = 3.0
+        self.Kp = 1.5
+        self.omega = 2.45
+        
+        self.x_ref = np.array([0.0, 0.0, 0.9])
+        self.v_ref = np.array([0.0, 0.0, 0.0])
+        self.p_ref = np.array([0.0, 0.0, 0.0])
+        
+        self.x_desired = self.x_ref.copy()
+        self.initialized = True
+        
+    def update(self, current_zmp, current_com_pose):
+        
+        if not self.initialized:
+            if current_com_pose is None:
+                raise ValueError("Current CoM pose must be provided for initialization.")
+            self.x_ref = current_com_pose.copy()
+            self.x_desired = current_com_pose.copy()
+            self.initialized = True
+            
+            print(f"Ankle controller initialized with CoM: {current_com_pose}")
+            return self.x_desired, self.v_ref.copy()
+        
+        position_error = self.x_desired - self.x_ref
+        zmp_error = current_zmp - self.p_ref
+        
+        v_desired = np.zeros(3)
+        v_desired[0] = self.v_ref[0] - self.Kx * position_error[0] + self.Kp * zmp_error[0]
+        v_desired[1] = self.v_ref[1] - self.Kx * position_error[1] + self.Kp * zmp_error[1]
+        v_desired[2] = self.v_ref[2] - self.Kx * position_error[2] + self.Kp * zmp_error[2]
+        
+        dt = 0.001
+        self.x_desired[0:2] += v_desired[0:2] * dt
+        self.x_desired[2] = self.x_ref[2]  
+        
+        
+        
+        return self.x_desired, v_desired
+    
 class Talos(Robot, Node):
     def __init__(self, simulator, urdf, model, q=None, verbose=True, use_fixed_base=True):
         # Initialize as an rclpy Node
@@ -201,11 +304,13 @@ class Talos(Robot, Node):
         
         self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
 
-        self.push_state_machine = PushStateMachine(t_pause=2.0,
+        self.push_state_machine = PushStateMachine(t_pause=1.0,
                                                    tpush=0.5,
                                                    logger=self.get_logger())
         
         self.force_visualizer = ForceVisualizer(simulator)
+        
+        self.ankle_controller = AnkleController()
         
         self.hip_frame_name = "base_link"
         
@@ -322,6 +427,7 @@ def main():
         q=q_init 
     )
     
+    
     def com_controller():
             robot_node.update() 
             q_pin_current = robot_node.q()
@@ -334,7 +440,9 @@ def main():
             tsid_controller.setComRefState(p_ref)
             robot_node.get_logger().info(f"Set CoM reference to: {p_ref}")
         
-    
+    pb.enableJointForceTorqueSensor(robot_node.id(), robot_node.jointNameIndexMap()['leg_right_6_joint'], True)
+    pb.enableJointForceTorqueSensor(robot_node.id(), robot_node.jointNameIndexMap()['leg_left_6_joint'], True)
+
     
     robot_node.get_logger().info("=== Talos Push Force Test Started ===")
     robot_node.get_logger().info("Push sequence: RIGHT -> LEFT -> BACK")
@@ -342,6 +450,10 @@ def main():
 
 
     t_publish = 0.0 # For controlling publish rate
+    
+    data_recorder = DataRecorder()
+    plt.ion()
+    plt.figure(figsize=(12, 8))
 
 
     try:
@@ -351,6 +463,7 @@ def main():
 
             # Elapsed time
             current_sim_time = simulator.simTime()
+            
 
             # Update the simulator and the robot
             simulator.step()
@@ -361,13 +474,143 @@ def main():
             q_pin_current = robot_node.q()
             v_pin_current = robot_node.v()
             
-            p_com = tsid_controller.comState().pos()
-            p_RF = tsid_controller.get_placement_RF().translation
-            
             #State Machine Update
             robot_node.update_push_system(current_sim_time)
             
-        
+            
+            wren = pb.getJointState(robot_node.id(), robot_node.jointNameIndexMap()['leg_right_6_joint'])[2]
+            wnp = np.array([-wren[0], -wren[1], -wren[2], -wren[3], -wren[4], -wren[5]])
+            wr_ankle = pin.Force(wnp)
+            wren = pb.getJointState(robot_node.id(), robot_node.jointNameIndexMap()['leg_left_6_joint'])[2]
+            wnp = np.array([-wren[0], -wren[1], -wren[2], -wren[3], -wren[4], -wren[5]])
+            wl_ankle = pin.Force(wnp)
+            
+            data = robot_node._model.createData()
+            pin.framesForwardKinematics(tsid_controller.model, data, q_pin_current)
+            H_w_lsole = data.oMf[tsid_controller.model.getFrameId("left_sole_link")]
+            H_w_rsole = data.oMf[tsid_controller.model.getFrameId("right_sole_link")]
+            H_w_lankle = data.oMf[tsid_controller.model.getFrameId("leg_left_6_joint")]
+            H_w_rankle = data.oMf[tsid_controller.model.getFrameId("leg_right_6_joint")]
+            
+            def calculate_zmp(wr_ankle, wl_ankle, H_w_lsole, H_w_rsole, H_w_lankle, H_w_rankle):
+                
+                # Calculate ZMP based on ankle forces and foot placements
+                f_r_ankle = wr_ankle.linear
+                tau_r_ankle = wr_ankle.angular
+                f_l_ankle = wl_ankle.linear
+                tau_l_ankle = wl_ankle.angular
+                
+
+                p_r_sole = H_w_rsole.translation
+                p_l_sole = H_w_lsole.translation
+                
+                d = 0.1 
+                
+                if abs(f_r_ankle[2]) > 1.0:  
+                    p_xR = (-tau_r_ankle[1] - f_r_ankle[0] * d) / f_r_ankle[2]
+                    p_yR = (tau_r_ankle[0] - f_r_ankle[1] * d) / f_r_ankle[2]
+                    # Transform to world coordinates
+                    zmp_r_world = p_r_sole + np.array([p_xR, p_yR, 0.0])
+                else:
+                    p_xR = p_yR = 0.0
+                    zmp_r_world = p_r_sole
+                    f_r_ankle[2] = 0.0  # No contribution
+                
+                # Left foot ZMP  
+                if abs(f_l_ankle[2]) > 1.0:  
+                    p_xL = (-tau_l_ankle[1] - f_l_ankle[0] * d) / f_l_ankle[2]
+                    p_yL = (tau_l_ankle[0] - f_l_ankle[1] * d) / f_l_ankle[2]
+                    # Transform to world coordinates
+                    zmp_l_world = p_l_sole + np.array([p_xL, p_yL, 0.0])
+                else:
+                    p_xL = p_yL = 0.0
+                    zmp_l_world = p_l_sole
+                    f_l_ankle[2] = 0.0  # No contribution
+                
+                # Apply the weighted ZMP formula from your attachment
+                f_zR = abs(f_r_ankle[2])
+                f_zL = abs(f_l_ankle[2])
+                total_fz = f_zR + f_zL
+                
+                if total_fz > 1.0:  
+                    # Weighted average using the exact formula from attachment
+                    p_x = (zmp_r_world[0] * f_zR + zmp_l_world[0] * f_zL) / total_fz
+                    p_y = (zmp_r_world[1] * f_zR + zmp_l_world[1] * f_zL) / total_fz
+                    p_z = 0.0  # ZMP is on the ground
+                    
+                    return np.array([p_x, p_y, p_z])
+                
+                return np.array([0.0, 0.0, 0.0])
+            
+            def calculate_cmp(robot_node, tsid_controller, wr_ankle, wl_ankle):
+                
+                x = tsid_controller.comState().pos()
+                grf = wr_ankle.linear + wl_ankle.linear
+                f = grf
+                
+                if abs(f[2]) > 1.0:
+                    r_x = x[0] - (f[0] / f[2]) * x[2]
+                    r_y = x[1] - (f[1] / f[2]) * x[2]
+                    r_z = 0.0  # CMP is on the ground
+                    return np.array([r_x, r_y, r_z])
+                else:
+                    return np.array([x[0], x[1], 0.0])
+            
+            def calculate_cp_dcm(robot_node, tsid_controller, gravity=9.81):
+                com_state = tsid_controller.comState()
+                x_com = com_state.pos()
+                v_com = com_state.vel()
+                x_com = np.array(x_com) if not isinstance(x_com, np.ndarray) else x_com
+                
+                v_com = np.array(v_com) if not isinstance(v_com, np.ndarray) else v_com
+                
+                com_hight = x_com[2]
+                omega = np.sqrt(gravity / com_hight)
+                
+                xi_x = x_com[0] + (v_com[0] / omega)
+                xi_y = x_com[1] + (v_com[1] / omega)
+                xi_z = 0.0  
+                
+                cp_dcm = np.array([xi_x, xi_y, xi_z])
+                return cp_dcm, omega
+                
+            zmp_position = calculate_zmp(wr_ankle, wl_ankle, H_w_rankle, H_w_lankle, H_w_rsole, H_w_lsole)
+            cmp_position = calculate_cmp(robot_node, tsid_controller, wr_ankle, wl_ankle)
+            cp_dcm_position, omega = calculate_cp_dcm(robot_node, tsid_controller, gravity=9.81)
+            
+            com_position = tsid_controller.comState().pos()
+            robot_node.get_logger().info(f"CoM position: [{com_position[0]:.3f}, {com_position[1]:.3f}, {com_position[2]:.3f}]")
+            com_velocity = tsid_controller.comState().vel()
+            
+            desired_com_pos, desired_com_vel = robot_node.ankle_controller.update( 
+                current_zmp=zmp_position,
+                current_com_pose=com_position
+            )
+            
+            tsid_controller.setComRefState(desired_com_pos, desired_com_vel)
+
+            if int(current_sim_time) % 2 == 0:
+                zmp_error = np.linalg.norm(zmp_position[0:2] - robot_node.ankle_controller.p_ref[0:2])
+                robot_node.get_logger().info(f"ZMP error: {zmp_error:.4f}m, Desired CoM: [{desired_com_pos[0]:.3f}, {desired_com_pos[1]:.3f}]")
+                robot_node.get_logger().info(f"Desired CoM velocity: [{desired_com_vel[0]:.3f}, {desired_com_vel[1]:.3f}, {desired_com_vel[2]:.3f}]")
+            
+            if DO_Plot==True:
+                data_recorder.record(current_sim_time, com_position, zmp_position, cmp_position, cp_dcm_position)
+            
+                if int(current_sim_time * 100)%10 == 0:
+                    data_recorder.plot_realtime()
+            
+            
+            # Debug info every 2 seconds
+            if int(current_sim_time) % 2 == 0:
+                force_right = np.linalg.norm(wr_ankle.linear)
+                force_left = np.linalg.norm(wl_ankle.linear)
+                robot_node.get_logger().debug(f"Ankle forces - Right: {force_right:.2f}N, Left: {force_left:.2f}N")
+                robot_node.get_logger().info(f"ZMP position: [{zmp_position[0]:.3f}, {zmp_position[1]:.3f}, {zmp_position[2]:.3f}]")
+                robot_node.get_logger().debug(f"CMP position: [{cmp_position[0]:.3f}, {cmp_position[1]:.3f}, {cmp_position[2]:.3f}]")
+                robot_node.get_logger().debug(f"CP/DCM position: [{cp_dcm_position[0]:.3f}, {cp_dcm_position[1]:.3f}, {cp_dcm_position[2]:.3f}]")
+
+
             tau_sol, dv_sol = tsid_controller.update(q_pin_current, v_pin_current, current_sim_time)
             robot_node.setActuatedJointTorques(tau_sol)
 
@@ -387,6 +630,9 @@ def main():
         robot_node.get_logger().info("Keyboard interrupt received, shutting down.")
     finally:
         # Cleanly shutdown ROS
+        data_recorder.save_data("robot_data_test2.npz")
+        plt.ioff
+        plt.show()
         robot_node.destroy_node()
         rclpy.shutdown()
     
