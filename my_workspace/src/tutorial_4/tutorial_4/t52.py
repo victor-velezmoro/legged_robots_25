@@ -61,9 +61,9 @@ class PushStateMachine:
         self.logger = logger
         
         self.push_sequence = [
-            {"direction": PushDirection.RIGHT, "magnitude": 20.0},
-            {"direction": PushDirection.LEFT, "magnitude": 20.0},
-            {"direction": PushDirection.BACK, "magnitude": 20.0}
+            {"direction": PushDirection.RIGHT, "magnitude": 50.0},
+            {"direction": PushDirection.LEFT, "magnitude": 50.0},
+            {"direction": PushDirection.BACK, "magnitude": 50.0}
         ]
         # State tracking
         self.state = PushState.WAITING
@@ -143,6 +143,74 @@ class PushStateMachine:
         return f"State: {self.state.value}, Push: {self.current_push_index + 1}/3 ({direction_name})"
    
 class DataRecorder:
+    
+    
+    #Real time data recorder for CoM, ZMP, CMP, CP/DCM commented out due to performance issues
+    
+    # def __init__(self, max_samples=10000):
+    #     self.max_samples = max_samples
+    #     self.time_data = deque(maxlen=max_samples)
+    #     self.com_x = deque(maxlen=max_samples)
+    #     self.com_y = deque(maxlen=max_samples)
+    #     self.zmp_x = deque(maxlen=max_samples)
+    #     self.zmp_y = deque(maxlen=max_samples)
+    #     self.cmp_x = deque(maxlen=max_samples)
+    #     self.cmp_y = deque(maxlen=max_samples)
+    #     self.cp_x = deque(maxlen=max_samples)
+    #     self.cp_y = deque(maxlen=max_samples)
+        
+    # def record(self, time, com_pos, zmp_pos, cmp_pos, cp_pos):
+    #     self.time_data.append(time)
+    #     self.com_x.append(com_pos[0])
+    #     self.com_y.append(com_pos[1])
+    #     self.zmp_x.append(zmp_pos[0])
+    #     self.zmp_y.append(zmp_pos[1])
+    #     self.cmp_x.append(cmp_pos[0])
+    #     self.cmp_y.append(cmp_pos[1])
+    #     self.cp_x.append(cp_pos[0])
+    #     self.cp_y.append(cp_pos[1])
+    
+    # def save_data(self, filename="robot_data.npz"):
+    #     np.savez(filename,
+    #              time=np.array(self.time_data),
+    #              com_x=np.array(self.com_x), com_y=np.array(self.com_y),
+    #              zmp_x=np.array(self.zmp_x), zmp_y=np.array(self.zmp_y),
+    #              cmp_x=np.array(self.cmp_x), cmp_y=np.array(self.cmp_y),
+    #              cp_x=np.array(self.cp_x), cp_y=np.array(self.cp_y))
+    #     print(f"Data saved to {filename}")
+    
+    # def plot_realtime(self):
+    #     if len(self.time_data) < 2:
+    #         return
+            
+    #     plt.clf()
+        
+    #     # Plot X components
+    #     plt.subplot(2, 1, 1)
+    #     plt.plot(self.time_data, self.com_x, 'b-', label='CoM X', linewidth=2)
+    #     plt.plot(self.time_data, self.zmp_x, 'r-', label='ZMP X', linewidth=1)
+    #     plt.plot(self.time_data, self.cmp_x, 'g-', label='CMP X', linewidth=1)
+    #     plt.plot(self.time_data, self.cp_x, 'm-', label='CP/DCM X', linewidth=1)
+    #     plt.ylabel('X Position (m)')
+    #     plt.legend()
+    #     plt.grid(True)
+    #     plt.title('Ground Reference Points and CoM - X Components')
+        
+    #     # Plot Y components
+    #     plt.subplot(2, 1, 2)
+    #     plt.plot(self.time_data, self.com_y, 'b-', label='CoM Y', linewidth=2)
+    #     plt.plot(self.time_data, self.zmp_y, 'r-', label='ZMP Y', linewidth=1)
+    #     plt.plot(self.time_data, self.cmp_y, 'g-', label='CMP Y', linewidth=1)
+    #     plt.plot(self.time_data, self.cp_y, 'm-', label='CP/DCM Y', linewidth=1)
+    #     plt.xlabel('Time (s)')
+    #     plt.ylabel('Y Position (m)')
+    #     plt.legend()
+    #     plt.grid(True)
+        
+    #     plt.tight_layout()
+    #     plt.pause(0.01)
+    
+    
     def __init__(self, max_samples=10000, smooth_window=10):
         self.max_samples = max_samples
         self.smooth_window = smooth_window
@@ -329,41 +397,41 @@ class AnkleController:
             
             print(f"Ankle controller initialized with CoM: {current_com_pose}")
             return self.x_desired, self.v_ref.copy()
-
+        
         position_error = self.x_desired - self.x_ref
-
         zmp_error = current_zmp - self.p_ref
         
         v_desired = np.zeros(3)
         v_desired[0] = self.v_ref[0] - self.Kx * position_error[0] + self.Kp * zmp_error[0]
         v_desired[1] = self.v_ref[1] - self.Kx * position_error[1] + self.Kp * zmp_error[1]
         v_desired[2] = self.v_ref[2] - self.Kx * position_error[2] + self.Kp * zmp_error[2]
-
+        
         #if int(current_sim_time * 100)%10 == 0:
         #    print(f"Ankle Controller: v_desired = {v_desired}, position_error = {position_error}, zmp_error = {zmp_error}")
             
         dt = 0.001
         self.x_desired[0:2] += v_desired[0:2] * dt
-        self.x_desired[2] = self.x_ref[2]
-
-
+        self.x_desired[2] = self.x_ref[2]  
+        
+        
+        
         return self.x_desired, v_desired
     
 class HipController:
-    def __init__(self, K_gamma = 1.0):
+    def __init__(self, K_gamma = 20.0):
         self.K_gamma = K_gamma
-
-        self.r_ref = np.array([0.0, 0.0])
-        self.initialized = True
-
-    def update(self, current_cmp):
-        cmp_error = current_cmp[:2] - self.r_ref
         
-        gamma_d = np.zeros(2)
+        self.r_ref = np.array([0.0, 0.0, 0.0])  
+        self.inilialized = True
+    
+    def update(self, current_cmp):
+        cmp_error = current_cmp - self.r_ref
+        
+        gamma_d = np.zeros(3)
         gamma_d[0] = self.K_gamma * cmp_error[1]
         gamma_d[1] = -self.K_gamma * cmp_error[0]
-        #gamma_d = self.K_gamma * (cmp_error)
-
+        gamma_d[2] = 0.0  # No vertical component
+        
         return gamma_d
     
     def set_reference_cmp(self, r_ref):
@@ -423,7 +491,7 @@ class Talos(Robot, Node):
         # Use self.applyForce() or pb.applyExternalForce()
         if np.linalg.norm(force_vector) > 0:
             hip_position = self.get_hip_position()
-            self.applyForce(force_vector, hip_position)
+            self.applyForce(force_vector, hip_position)  ##apply force to hip
 
     def get_hip_position(self):
         """Get current hip/base position for visualization"""
@@ -555,14 +623,20 @@ def main():
 
     t_publish = 0.0 # For controlling publish rate
     
-    data_recorder = DataRecorder()  
-    # plt.ion()
-    # plt.figure(figsize=(12, 8))
-    iteration_counter = 0
+    data_recorder = DataRecorder()
+    plt.ion()
+    plt.figure(figsize=(12, 8))
+    
+    q_tsid = q_init.copy()  
+    v_tsid = np.zeros(36)
+    n_update = 1 
+    
+    counter = 0
+
 
     try:
         while rclpy.ok():
-            iteration_counter += 1
+            counter += 1
             # Process ROS events (e.g., for subscribers or timers if any)
             # rclpy.spin_once(robot_node, timeout_sec=0.00001)
 
@@ -694,10 +768,10 @@ def main():
             )
             desired_angular_momentum = robot_node.hip_controller.update(cmp_position)
             
-            ####################
-            ## Setting Controller
-            ####################
-            robot_node.get_logger().debug(f"Setting CoM reference: {desired_com_pos[0]}, {com_position[0]}")
+            
+            #############
+            # Set Controller
+            #############
             
             tsid_controller.setComRefState(desired_com_pos, desired_com_vel)
             
@@ -706,7 +780,10 @@ def main():
             tsid_controller.amTask.setReference(am_ref)
             
             tau_sol, dv_sol = tsid_controller.update(q_pin_current, v_pin_current, current_sim_time)
-            robot_node.setActuatedJointTorques(tau_sol)
+            #robot_node.setActuatedJointTorques(tau_sol)
+            
+            q_tsid, v_tsid = tsid_controller.integrate_dv(q_tsid, v_tsid, dv_sol, n_update*simulator.stepTime())
+            robot_node.setActuatedJointPositions(q_tsid, v_tsid)
             
             
             ##############################
@@ -719,11 +796,10 @@ def main():
                 robot_node.get_logger().debug(f"Desired CoM velocity: [{desired_com_vel[0]:.3f}, {desired_com_vel[1]:.3f}, {desired_com_vel[2]:.3f}]")
             
             if DO_Plot==True:
-                if iteration_counter % 10 == 0:  # Record every 10 iterations
+                if counter % 10 == 0:
                     data_recorder.record(current_sim_time, com_position, zmp_position, cmp_position, cp_dcm_position)
             
-                # if int(current_sim_time*100 )%50 == 0:
-                #     data_recorder.plot_realtime()
+                
             
             
             # Debug info every 2 seconds
@@ -753,8 +829,8 @@ def main():
     finally:
         # Cleanly shutdown ROS
         if DO_Plot:
-            data_recorder.save_data("torque_control__hip_control_20.npz")
-            data_recorder.create_final_plot("torque_control__hip_control_20.png")
+            data_recorder.save_data("pose_control_ankle_hip_controller_50.npz")
+            data_recorder.create_final_plot("pose_control_ankle_hip_controller_50.png")
 
         robot_node.destroy_node()
         rclpy.shutdown()
@@ -762,3 +838,9 @@ def main():
 if __name__ == '__main__': 
     main()
 
+
+
+
+## to do :
+'''test controller
+test push direction'''

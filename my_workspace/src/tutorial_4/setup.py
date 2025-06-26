@@ -26,6 +26,7 @@ setup(
             '01_standing=tutorial_4.01_standing:main',
             '03_squating=tutorial_4.03_squating:main',
             't51=tutorial_4.t51:main',
+            't52=tutorial_4.t52:main',
         ],
     },
 )

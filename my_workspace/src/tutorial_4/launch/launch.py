@@ -66,12 +66,29 @@ def generate_launch_description():
         output='screen',
         parameters=[params],
     )
+    
+    t51_node = Node(
+        package='tutorial_4',
+        executable='t51',
+        name='t51_node',
+        output='screen',
+        parameters=[params],
+    )
 
+    t52_node = Node(
+        package='tutorial_4',
+        executable='t52',
+        name='t52_node',
+        output='screen',
+        parameters=[params],
+    )
 
     ld.add_action(rsp)
     ld.add_action(rviz_node)
     ld.add_action(t4_standing_node)
     #ld.add_action(t4_one_leg_standing_node)
     #ld.add_action(t4_squating_node)
+    #ld.add_action(t51_node)
+    #ld.add_action(t52_node)
     # Return the launch description
     return ld
