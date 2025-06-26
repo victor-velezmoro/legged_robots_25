@@ -1,0 +1,29 @@
+03 is wrong (z axis is flipped)
+05 is wrong (z axis is flipped)
+
+
+Answer T1.2: 
+ When rotating the cube around the world, the angular velocity vector will remain fixed in the world frame, while the liner velocity vector rotates with the cube.This happens because the linear velocity is tied to the cube's local frame, and as the frame rotates, the linear velocity vector rotates with it.
+
+ Answer T1.3:
+When the cage spins, the force component of the wrench stays constant because it is independent of the frame's rotation. The torque component changes because it depends on the relative position vector, which varies with the rotation of the cage.
+
+
+Answer T2:
+t2_main is not a ros2 node because it is not a ros2 instance. It is a Python script that can be executed directly. The script does not contain any ROS2 node initialization code, such as `rclpy.init()` or `rclpy.spin()`, which are necessary for a script to function as a ROS2 node.
+
+Answer Tut4 & Tut5:
+
+Which ground reference points can exist outside the supporting polygon?
+
+CP/DCM can exist outside the supporting polygon, indicates where the robot needs to step to maintain balance
+CMP can also exist outside the supporting polygon, indicating instability in the robot's stance.
+
+5. Which modality holds higher pushing forces, torque or position hardware interface?
+
+In theory the torque controller should handle higher pushing forces better than the position controller, since its direct force and torque control allows for immediate response, further there is no position tracking error that could lead to instability. So it should be better for force rejection tasks. The position controller is limited by position controller gains and saturation, which can lead to instability if the forces are too high. Normally they also have a slower response time due to the need to track and correct position errors.
+However, in our case the position controller could resist higher forces than the torque controller. This could be due to bad tuning but also because of noise or inaccuracies in the simulator, which can lead to the torque controller being less effective in rejecting forces. The position controller can also be more stable in the presence of noise, as it does not react to instantaneous changes in force but rather to position errors over time.
+
+6.  Are the torque and position control modalities equivalent with the proposed method?
+
+No they are not equivalent. The torque control modality directly controls the joint torques, while the position control modality indirectly controls the joint positions through the integration of joint velocities. This means that the torque control modality can react more quickly to changes in external forces, while the position control modality may have a delay due to the integration process. 
