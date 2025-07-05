@@ -320,9 +320,7 @@ class MPC:
 # run the simulation
 ################################################################################
 
-# inital state in x0 = [px0, vx0]
 x_0 = np.array([0.0, 0.0])
-# inital state in y0 = [py0, vy0]
 y_0 = np.array([-0.09, 0.0])
 
 # footprint
@@ -377,14 +375,14 @@ for i in range(NO_SIM_SAMPLES):
         #>>>>TODO: extract the current horizon from the complete reference trajecotry ZMP_ref
         # ZMP_ref_k = ZMP_ref[k:k+mpc.no_samples]
         #>>>>TODO: extract the current horizon from the complete reference trajecotry ZMP_ref
-        end_idx = min(k + mpc.no_samples, len(ZMP_ref))
+        end_idx = min(k + mpc.no_samples, len(ZMP_ref)) # not out of bound 
         ZMP_ref_k = ZMP_ref[k:end_idx]
         
         # If we don't have enough samples, pad with the last available reference
-        if len(ZMP_ref_k) < mpc.no_samples:
-            last_ref = ZMP_ref_k[-1] if len(ZMP_ref_k) > 0 else ZMP_ref[-1]
-            padding = np.tile(last_ref, (mpc.no_samples - len(ZMP_ref_k), 1))
-            ZMP_ref_k = np.vstack([ZMP_ref_k, padding])
+        # if len(ZMP_ref_k) < mpc.no_samples:
+        #     last_ref = ZMP_ref_k[-1] if len(ZMP_ref_k) > 0 else ZMP_ref[-1]
+        #     padding = np.tile(last_ref, (mpc.no_samples - len(ZMP_ref_k), 1))
+        #     ZMP_ref_k = np.vstack([ZMP_ref_k, padding])
     
         real_samples_in_horizon = len(ZMP_ref) - k
         if real_samples_in_horizon < mpc.no_samples:
@@ -392,7 +390,8 @@ for i in range(NO_SIM_SAMPLES):
             idx_terminal_k = real_samples_in_horizon
         else:
             idx_terminal_k = mpc.no_samples + 1
-        
+            #idx_terminal_k = NO_MPC_SAMPLES - k
+
         #>>>>TODO: Update the mpc, get new command
         u_k = mpc.buildSolveOCP(x_k, ZMP_ref_k, idx_terminal_k)
         

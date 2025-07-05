@@ -20,7 +20,7 @@
 		"--hostname", "${containerWorkspaceFolderBasename}_devcont",
 		"--add-host=${containerWorkspaceFolderBasename}_devcont=127.0.1.2",
 		"--privileged",
-     	"--net=host",
+     	"--net=host"
 	],
 
 	"mounts": [
