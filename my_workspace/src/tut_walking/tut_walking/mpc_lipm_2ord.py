@@ -211,7 +211,7 @@ class Simulator:
         of external pushes on the LIP.
         """
 
-        #>>>>TODO: Compute x_dot and use euler integration to approximate
+        #>>>>TODO: Compute x_dot and use euler integration to approximatefint
         # the state at t+dt
         #>>>>TODO: The disturbance is added in x_dot as self.D@d
         x_dot = self.A @ self.x + self.B @ u + self.D @ d

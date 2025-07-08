@@ -2,13 +2,14 @@ import os
 import pinocchio as pin
 import numpy as np
 import rospkg
+from ament_index_python.packages import get_package_share_directory
 
 ################################################################################
 # robot
 ################################################################################
 
 rospack = rospkg.RosPack()
-talos_description = rospack.get_path('talos_description')
+talos_description = get_package_share_directory('talos_description')
 urdf = os.path.join(talos_description, "robots/talos_reduced_no_hands.urdf")
 path = os.path.join(talos_description, "meshes/../..")
 
@@ -89,8 +90,8 @@ kp_posture = np.array([
         10., 10., 10., 10., 10., 10.,           # left leg  #low gain on axis along y and knee
         10., 10., 10., 10., 10., 10.,           # right leg #low gain on axis along y and knee
         5000., 5000.,                           # torso really high to make them stiff
-        10., 10., 10., 10., 10., 10., 10., 10., # right arm make the x direction soft
-        10., 10., 10., 10., 10., 10., 10., 10., # left arm make the x direction soft
+        10., 10., 10., 10., 10., 10., 10., # right arm make the x direction soft
+        10., 10., 10., 10., 10., 10., 10., # left arm make the x direction soft
         1000., 1000.                            # head
 ])
 masks_posture = np.ones(na)                     # mask out joint (here none)

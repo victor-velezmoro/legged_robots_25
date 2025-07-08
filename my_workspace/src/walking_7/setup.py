@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'foot_trajectory=walking_7.foot_trajectory:main',
+            'walking=walking_7.walking:main',
         ],
     },
 )
