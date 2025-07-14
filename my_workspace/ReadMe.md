@@ -34,7 +34,7 @@ Use this launch file to start visualization nodes for Bullet simulations. Rememb
 ros2 launch bullet_sims launch.py
 ```
 
-## 🤖 `tutorial_4` Package - Tutorial 4 Content
+## 🤖 `tut_4_5` Package - Tutorial 4 Content
 
 This package contains basic control implementations for the Talos robot demonstrating fundamental balancing and movement capabilities.
 
@@ -43,7 +43,7 @@ Implements basic standing control where the robot maintains its upright posture 
 
 **🚀 Launch Command:**
 ```bash
-ros2 run tutorial_4 01_standing
+ros2 run tut_4_5 01_standing
 ```
 
 ### `02_one_leg_stand.py` - Single Leg Balance
@@ -51,7 +51,7 @@ Demonstrates advanced balance control where the robot can balance on one leg, te
 
 **🚀 Launch Command:**
 ```bash
-ros2 run tutorial_4 02_one_leg_stand
+ros2 run tut_4_5 02_one_leg_stand
 ```
 
 ### `03_squating.py` - Squatting with Arm Movement
@@ -59,10 +59,10 @@ Implements coordinated movement where the robot can squat on one leg while simul
 
 **🚀 Launch Command:**
 ```bash
-ros2 run tutorial_4 03_squating
+ros2 run tut_4_5 03_squating
 ```
 
-## 🏃‍♂️ `tutorial_4` Package - Tutorial 5 Content
+## 🏃‍♂️ `tut_4_5` Package - Tutorial 5 Content
 
 This package contains advanced control implementations for the Talos robot, including ankle and hip controllers with push disturbance testing.
 
@@ -78,7 +78,7 @@ Implements ankle and hip controllers using **torque control** along with a push 
 
 **🚀 Launch Command:**
 ```bash
-ros2 run tutorial_4 t51
+ros2 run tut_4_5 t51
 ```
 
 ### `t52.py` - Position Control with Push Testing
@@ -86,7 +86,7 @@ Similar to t51.py but implements the same ankle and hip controllers using **posi
 
 **🚀 Launch Command:**
 ```bash
-ros2 run tutorial_4 t52
+ros2 run tut_4_5 t52
 ```
 
 ### 📊 Generated Plots
@@ -98,10 +98,82 @@ Both scripts automatically generate analysis plots showing:
 
 **📁 Plot Location:**
 ```
-/workspaces/ros2_ws/my_workspace/src/tutorial_4/plots/
+/workspaces/ros2_ws/my_workspace/src/tut_4_5/plots/
 ```
 
 Plots are saved in both PNG and PDF formats with smoothed data visualization for better analysis.
+
+## 🚶‍♂️ `tut_6` Package - Tutorial 6 Content
+
+This package contains advanced walking control implementations using the Linear Inverted Pendulum Model (LIPM) with both optimal control and model predictive control approaches for trajectory planning and gait generation.
+
+### `ocp_lipm_2ord.py` - Optimal Control Problem for LIPM
+Implements trajectory planning for the Linear Inverted Pendulum Model using an Optimal Control Problem (OCP) formulation. This approach solves the entire footstep plan in one optimization over the complete horizon.
+
+**Features:**
+- Linear Inverted Pendulum Model with 2D state [cx, vx, cy, vy]
+- ZMP (Zero Moment Point) control [px, py]
+- Complete footstep trajectory planning
+- Footstep generation with alternating left/right pattern
+- ZMP tracking with footprint constraints
+- CoM velocity smoothing
+- Comprehensive visualization (X-axis, Y-axis, XY-plane trajectories)
+
+**🚀 Launch Command:**
+```bash
+ros2 run tut_6 ocp
+```
+
+### `mpc_lipm_2ord.py` - Model Predictive Control for LIPM
+Implements the same Linear Inverted Pendulum Model but using Model Predictive Control (MPC) with a receding horizon approach. The system solves trajectory planning multiple times over shorter horizons of 2 steps.
+
+**Features:**
+- Receding horizon control with 2-step lookahead
+- Real-time MPC updates at 10Hz (T_MPC = 0.1s)
+- High-frequency simulation at 200Hz (T_SIM = 0.005s)
+- Push disturbance testing for robustness evaluation
+- Dynamic footstep reference tracking
+- Terminal state constraints for stability
+- Real-time visualization and data recording
+
+**🚀 Launch Command:**
+```bash
+ros2 run tut_6 mpc
+```
+
+### 📊 Generated Plots
+Both scripts automatically generate comprehensive analysis plots including:
+- **X-axis trajectories**: CoM position, ZMP tracking, ZMP bounds, velocity and acceleration
+- **Y-axis trajectories**: Same metrics as X-axis for lateral movement
+- **XY-plane view**: Footstep plan, ZMP reference, CoM trajectory, and ZMP trajectory
+- **Disturbance analysis**: Push effects visualization (MPC only)
+
+**📁 Plot Location:**
+```
+/workspaces/ros2_ws/my_workspace/src/tut_6/plots/
+```
+
+Plots are saved in PNG format with high resolution (300 DPI) for detailed analysis and comparison between OCP and MPC approaches.
+
+
+## 🚶‍♂️  Tutorial 7
+
+**This work was done in collaboration with Timo Class and can be found in his repository/delivery.**
+
+
+
+
+
+
+
+
+
+### 🎯 Key Differences: OCP vs MPC
+- **OCP**: Solves the complete walking trajectory in one optimization, optimal but computationally intensive
+- **MPC**: Uses receding horizon with frequent re-optimization, more robust to disturbances and real-time capable
+
+
+
 
 ## 📝 Manual Script Execution
 If a script is not a ROS 2 node, you will need to launch it manually using standard Python execution methods (e.g., `python path/to/your/script.py`).
