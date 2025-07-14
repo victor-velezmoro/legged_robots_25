@@ -103,6 +103,15 @@ Both scripts automatically generate analysis plots showing:
 
 Plots are saved in both PNG and PDF formats with smoothed data visualization for better analysis.
 
+
+## ⚠️ Important Notes
+
+*   **Interactive Marker Timing:** When testing the interactive marker, please **wait** until the `JointController` finishes its task (i.e., reaches its goal position) **before** attempting to move the cube.
+*   **Push Testing:** The push sequence automatically starts after initialization. Wait for the "Push sequence started" message before expecting disturbances.
+*   **Data Recording:** Both t51.py and t52.py automatically record simulation data and generate analysis plots upon completion (Ctrl+C to stop and save).
+
+
+
 ## 🚶‍♂️ `tut_6` Package - Tutorial 6 Content
 
 This package contains advanced walking control implementations using the Linear Inverted Pendulum Model (LIPM) with both optimal control and model predictive control approaches for trajectory planning and gait generation.
@@ -155,6 +164,11 @@ Both scripts automatically generate comprehensive analysis plots including:
 
 Plots are saved in PNG format with high resolution (300 DPI) for detailed analysis and comparison between OCP and MPC approaches.
 
+### 🎯 Key Differences: OCP vs MPC
+- **OCP**: Solves the complete walking trajectory in one optimization, optimal but computationally intensive
+- **MPC**: Uses receding horizon with frequent re-optimization, more robust to disturbances and real-time capable
+
+
 
 ## 🚶‍♂️  Tutorial 7
 
@@ -164,22 +178,6 @@ Plots are saved in PNG format with high resolution (300 DPI) for detailed analys
 
 
 
-
-
-
-
-### 🎯 Key Differences: OCP vs MPC
-- **OCP**: Solves the complete walking trajectory in one optimization, optimal but computationally intensive
-- **MPC**: Uses receding horizon with frequent re-optimization, more robust to disturbances and real-time capable
-
-
-
-
 ## 📝 Manual Script Execution
 If a script is not a ROS 2 node, you will need to launch it manually using standard Python execution methods (e.g., `python path/to/your/script.py`).
 
-## ⚠️ Important Notes
-
-*   **Interactive Marker Timing:** When testing the interactive marker, please **wait** until the `JointController` finishes its task (i.e., reaches its goal position) **before** attempting to move the cube.
-*   **Push Testing:** The push sequence automatically starts after initialization. Wait for the "Push sequence started" message before expecting disturbances.
-*   **Data Recording:** Both t51.py and t52.py automatically record simulation data and generate analysis plots upon completion (Ctrl+C to stop and save).
