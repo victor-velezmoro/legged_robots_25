@@ -385,6 +385,23 @@ class TSIDWrapper:
         self.comTask = comTask
         self.amTask = amTask
         self.postureTask = postureTask
+        
+        # Store formulation and contacts for later use
+        self.formulation = formulation
+        self.contactRF = contactRF
+        self.contactLF = contactLF
+        
+        # Initialize contact states
+        self.contact_RF_active = True
+        self.contact_LF_active = True
+        self.motion_RF_active = False
+        self.motion_LF_active = False
+        self.motion_RH_active = False
+        self.motion_LH_active = False
+
+        self.sol = None
+        self.tau_sol = np.zeros(self.robot.na)
+        self.dv_sol = np.zeros(self.robot.nv)
         self.actuationBoundsTask = actuationBoundsTask
         self.jointVelBoundsTask = jointVelBoundsTask
         self.formulation = formulation

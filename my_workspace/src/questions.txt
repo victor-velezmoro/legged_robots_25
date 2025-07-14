@@ -27,3 +27,16 @@ However, in our case the position controller could resist higher forces than the
 6.  Are the torque and position control modalities equivalent with the proposed method?
 
 No they are not equivalent. The torque control modality directly controls the joint torques, while the position control modality indirectly controls the joint positions through the integration of joint velocities. This means that the torque control modality can react more quickly to changes in external forces, while the position control modality may have a delay due to the integration process. 
+
+
+Tut 6:
+- What is the meaning of the variables h?
+The variable h is the time step duration at each discretization node.
+
+- What happens if we add constraints on the magnitude u(t)?
+when limiting the control input and with that torque, the pendulum will need more time to reach the goal position. Futher it prevends bang bang control by providing smoother control inputs( limited torque)
+
+- What is the difference of this pendulum problem compared to the CoM trajectory optimization (hint look at their dynamics equations)?
+The pendulum problem is an underactuated system with 2 states and 1 controller. Further it is a nonlinear system ( which makes it more complex)
+the COM trajectory optimization is a linear system with 3 states and 3 controllers. It is a linear system, which makes it easier to solve.
+

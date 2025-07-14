@@ -1,5 +1,8 @@
 import pybullet as pb
 import numpy as np
+import sys
+sys.path.insert(0, '/workspaces/ros2_ws/my_workspace/src/simulator')
+
 from simulator.pybullet_wrapper import PybulletWrapper
 from simulator.robot import Robot
 import pinocchio as pin

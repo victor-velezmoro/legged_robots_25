@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'tut_walking'
+package_name = 'tut_4_5'
 
 setup(
     name=package_name,
@@ -10,6 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/launch', ['launch/launch.py']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -20,10 +21,12 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "ex2=tut_walking.example_2_pydrake:main",
-            "opc=tut_walking.ocp_lipm_2ord:main",
-            "mpc=tut_walking.mpc_lipm_2ord:main",
-            
+            't4_standing=tut_4_5.t4_standing:main',
+            '02_one_leg_stand=tut_4_5.02_one_leg_stand:main',
+            '01_standing=tut_4_5.01_standing:main',
+            '03_squating=tut_4_5.03_squating:main',
+            't51=tut_4_5.t51:main',
+            't52=tut_4_5.t52:main',
         ],
     },
 )

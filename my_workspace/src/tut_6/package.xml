@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>tut_walking</name>
+  <name>tut_6</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
   <maintainer email="ge65luz@mytum.de">devel</maintainer>
@@ -11,7 +11,7 @@
   <depend>reemc_description</depend>
   <depend>talos_description</depend>
   <depend>bullet_sims</depend>
-  <depend>tutorial_4</depend>
+  <depend>tut_4_5</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

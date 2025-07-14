@@ -1,7 +1,0 @@
-The variable h is the time stemp duration at each disreticization node. 
-
-when limiting the control input and with that torque, the pendulum will need more time to reach the goal position. Futher it prevends bang bang control by providing smoother control inputs( limited torque)
-
-
-The pedulum problem is an underactuated system with 2 states and 1 controller. Futher is is a nonlinear system ( which makes it more complex)
-the COM trajectroy optimization is a linear system with 3 states and 3 controllers. It is a linear system, which makes it easier to solve.

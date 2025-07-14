@@ -12,8 +12,8 @@ from simulator.pybullet_wrapper import PybulletWrapper
 from simulator.robot import Robot
 
 # robot and controller
-from tutorial_4.tsid_wrapper import TSIDWrapper
-import tutorial_4.config as conf
+from tut_4_5.tsid_wrapper import TSIDWrapper
+import tut_4_5.config as conf
 
 # ROS
 import rclpy
@@ -103,7 +103,7 @@ class Talos(Robot):
 
 class Environment(Node):
     def __init__(self):
-        super().__init__('tutorial_4_standing_node')
+        super().__init__('tut_4_5_standing_node')
 
         # init TSIDWrapper
         self.tsid_wrapper = TSIDWrapper(conf)

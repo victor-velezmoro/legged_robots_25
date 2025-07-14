@@ -46,21 +46,21 @@ def generate_launch_description():
                                   output='both',
                                   parameters=[params])
     t4_standing_node = Node(
-        package='tutorial_4',
+        package='tut_4_5',
         executable='t4_standing',
         name='t4_standing_node',
         output='screen',
         parameters=[params],
     )
     t4_one_leg_standing_node = Node(
-        package='tutorial_4',
+        package='tut_4_5',
         executable='02_one_leg_stand',
         name='t4_one_leg_standing_node',
         output='screen',
         parameters=[params],
     )
     t4_squating_node = Node(
-        package='tutorial_4',
+        package='tut_4_5',
         executable='03_squating',
         name='t4_squating_node',
         output='screen',
@@ -68,7 +68,7 @@ def generate_launch_description():
     )
     
     t51_node = Node(
-        package='tutorial_4',
+        package='tut_4_5',
         executable='t51',
         name='t51_node',
         output='screen',
@@ -76,7 +76,7 @@ def generate_launch_description():
     )
 
     t52_node = Node(
-        package='tutorial_4',
+        package='tut_4_5',
         executable='t52',
         name='t52_node',
         output='screen',

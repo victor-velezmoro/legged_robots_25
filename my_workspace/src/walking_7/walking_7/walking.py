@@ -51,8 +51,12 @@ def main(args=None):
     T_swing_w = robot.stack.get_placement_LF()
     T_support_w = robot.stack.get_placement_RF()
     # initial footsteps for logging
-    LF_pos_ref = T_swing_w.translation
-    RF_pos_ref = T_support_w.translation
+    LF_pos_ref = T_swing_w.translation.copy()
+    LF_vel_ref = np.zeros(3)
+    LF_acc_ref = np.zeros(3)
+    RF_pos_ref = T_support_w.translation.copy()
+    RF_vel_ref = np.zeros(3)
+    RF_acc_ref = np.zeros(3)
     
     # setup the plan with 20 steps
     no_steps = 20
@@ -156,6 +160,14 @@ def main(args=None):
     # last publish time (last time we published something)
     t_publish = 0.0
 
+    # Initialize variables for first loop
+    step_next = plan[1] if len(plan) > 1 else plan[0]
+    sw_foot_loc_curr = plan[0].poseInWorld()
+    sw_foot_loc_next = step_next.poseInWorld()
+    foot_traj = SwingFootTrajectory(sw_foot_loc_curr, sw_foot_loc_next, conf.step_dur)
+    u_k = np.zeros_like(x0)
+    ZMP_ref_k = [ZMP_ref[0]]
+
     for i in range(-N_pre, N_sim):
         t = sim.simTime()  # Simulator time
         dt = sim.stepTime()  # Simulator dt
@@ -170,6 +182,8 @@ def main(args=None):
             c = interpolator.x
             # Extract the ZMP reference
             ZMP_ref_k = ZMP_ref[k: k + conf.no_mpc_samples_per_horizon]
+            if len(ZMP_ref_k) == 0:
+                ZMP_ref_k = [ZMP_ref[-1]]
             # get terminal index
             idx_terminal_k = (no_steps - 1) * conf.no_mpc_samples_per_step - k
             # Solve mpc
@@ -191,14 +205,30 @@ def main(args=None):
             step_next = plan[plan_idx + 1]
             sw_foot_loc_next = step_next.poseInWorld()
             
-            # Set the swing foot of the robot
-            robot.setSwingFoot(step_next.side)
-            
             # Set the support foot for the robot
             support_foot = Side.LEFT if step_next.side == Side.RIGHT else Side.RIGHT
             robot.setSupportFoot(support_foot)
-
             
+            # Set the swing foot of the robot
+            robot.setSwingFoot(step_next.side)
+            
+            
+
+            print(f"support foot: {support_foot}, swing foot: {step_next.side}")
+           
+            
+            # Check if contact switching is happening correctly
+            print(f"LF contact active: {robot.stack.contact_LF_active}")
+            print(f"RF contact active: {robot.stack.contact_RF_active}")
+            print(f"LF motion active: {robot.stack.motion_LF_active}")
+            print(f"RF motion active: {robot.stack.motion_RF_active}")
+            
+            # Check forces at contact switch
+            if i > 0:
+                lf_force = NORMAL_FORCE_LEFT_pb[i-1, 2]  # Z component
+                rf_force = NORMAL_FORCE_RIGHT_pb[i-1, 2]  # Z component
+                print(f"Forces before switch - LF: {lf_force:.2f}, RF: {rf_force:.2f}")
+
             # Plan a foot trajectory between current and next foot pose
             foot_traj = SwingFootTrajectory(
                 sw_foot_loc_curr, sw_foot_loc_next, conf.step_dur)
@@ -265,15 +295,11 @@ def main(args=None):
             COM_ACC_pin[i, :] = robot.stack.comState().second_derivative()
             COM_POS_pb[i, :] = robot.robot.baseCoMPosition()
             COM_VEL_pb[i, :] = robot.robot.baseCoMVelocity()
-            # TODO: Central difference method to get acceleration
-            '''
-            if len(COM_VEL_pb) >= 3:
-                gt_acc = (self.plot_gt_vel[-1] - self.plot_gt_vel[-3]
-                        ) / (self.plot_time[-1] - self.plot_time[-3])
+            # Calculate COM acceleration using central difference
+            if i >= 2:
+                COM_ACC_pb[i, :] = (COM_VEL_pb[i, :] - COM_VEL_pb[i-2, :]) / (2 * dt)
             else:
-                gt_acc = np.zeros_like(gt_vel)
-            COM_ACC_pb[i, :] = 
-            '''
+                COM_ACC_pb[i, :] = np.zeros(3)
 
             ANGULAR_MOMENTUM[i, :] = robot.stack.get_angular_momentum()
 
@@ -283,32 +309,46 @@ def main(args=None):
             RIGHT_FOOT_POS_ref[i, :] = RF_pos_ref
             RIGHT_FOOT_VEL_ref[i, :] = RF_vel_ref
             RIGHT_FOOT_ACC_ref[i, :] = RF_acc_ref
-            LF_3d_pos, LF_3d_vel, LF_3d_acc = robot.stack.get_LF_3d_pos_vel_acc(robot.dv)
+            # Robust unpacking for get_LF_3d_pos_vel_acc
+            lf_result = robot.stack.get_LF_3d_pos_vel_acc(robot.dv)
+            if len(lf_result) == 3:
+                LF_3d_pos, LF_3d_vel, LF_3d_acc = lf_result
+            else:
+                LF_3d_pos, LF_3d_vel = lf_result
+                LF_3d_acc = np.zeros(3)
             LEFT_FOOT_POS_pin[i, :] = LF_3d_pos
             LEFT_FOOT_VEL_pin[i, :] = LF_3d_vel
             LEFT_FOOT_ACC_pin[i, :] = LF_3d_acc
-            RF_3d_pos, RF_3d_vel, RF_3d_acc = robot.stack.get_RF_3d_pos_vel_acc(
-                robot.dv)
+            rf_result = robot.stack.get_RF_3d_pos_vel_acc(robot.dv)
+            if len(rf_result) == 3:
+                RF_3d_pos, RF_3d_vel, RF_3d_acc = rf_result
+            else:
+                RF_3d_pos, RF_3d_vel = rf_result
+                RF_3d_acc = np.zeros(3)
             RIGHT_FOOT_POS_pin[i, :] = RF_3d_pos
             RIGHT_FOOT_VEL_pin[i, :] = RF_3d_vel
             RIGHT_FOOT_ACC_pin[i, :] = RF_3d_acc
 
             ZMP_REF[i, :] = interpolator.zmp()
-            ZMP_EST[i, :] = np.array([ZMP_ref_k[0][0], ZMP_ref_k[0][1], 0.0])
+            # ZMP logging: fallback if ZMP_ref_k is not available
+            if 'ZMP_ref_k' in locals() and len(ZMP_ref_k) > 0:
+                ZMP_EST[i, :] = np.array([ZMP_ref_k[0][0], ZMP_ref_k[0][1], 0.0])
+            else:
+                ZMP_EST[i, :] = np.zeros(3)
             DCM[i, :] = interpolator.dcm()
 
             NORMAL_FORCE_RIGHT_pb[i, :] = robot._get_ankle_wrenches()[0].linear
             NORMAL_FORCE_LEFT_pb[i, :] = robot._get_ankle_wrenches()[1].linear
-            '''
-            NORMAL_FORCE_RIGHT_pin[i, :] = robot.stack.get_RF_normal_force(
-                robot.dv)
-            NORMAL_FORCE_LEFT_pin[i, :] = robot.stack.get_LF_normal_force(
-                robot.dv)
-            '''
-            # TODO
-            # NORMAL_FORCE_RIGHT_pin[i, :] = robot.stack.get_RF_wrench(robot.dv)
-            # NORMAL_FORCE_LEFT_pin[i, :] = robot.stack.get_LF_wrench(robot.dv)
 
+            # Fix the pinocchio normal force calculation
+            if robot.stack.sol is not None:
+                rf_wrench = robot.stack.get_RF_wrench(robot.stack.sol)
+                lf_wrench = robot.stack.get_LF_wrench(robot.stack.sol)
+                NORMAL_FORCE_RIGHT_pin[i, :] = rf_wrench[:3]  # Take linear part
+                NORMAL_FORCE_LEFT_pin[i, :] = lf_wrench[:3]   # Take linear part
+            else:
+                NORMAL_FORCE_RIGHT_pin[i, :] = np.zeros(3)
+                NORMAL_FORCE_LEFT_pin[i, :] = np.zeros(3)
     ########################################################################
     # enough with the simulation, lets plot
     ########################################################################
@@ -316,7 +356,8 @@ def main(args=None):
     import matplotlib.pyplot as plt
     plt.style.use('seaborn-dark')
 
-    # Plot everything
+   
+
     def plot_3x3(data_refs, labels, title_prefix):
         fig, axes = plt.subplots(3, 3, figsize=(15, 10))
         components = ['x', 'y', 'z']
@@ -348,7 +389,7 @@ def main(args=None):
         data_refs=[
             [COM_POS_ref, COM_POS_pin, COM_POS_pb],
             [COM_VEL_ref, COM_VEL_pin, COM_VEL_pb],
-            [COM_ACC_ref, COM_ACC_pin],  # TODO: COM_ACC_pb
+            [COM_ACC_ref, COM_ACC_pin],  # Missing COM_ACC_pb
         ],
         labels=['ref', 'pinocchio', 'pybullet'],
         title_prefix='COM'
@@ -368,33 +409,42 @@ def main(args=None):
         title_prefix='Feet'
     )
 
-    # === ZMP, DCM & Angular Momentum ===
-    plot_3x3(
-        data_columns=[
-            [ZMP_REF, ZMP_EST],
-            [DCM],
-            [ANGULAR_MOMENTUM],
-        ],
-        column_labels=['ZMP', 'DCM', 'Angular Momentum'],
-        series_labels=[
-            ['ZMP ref', 'ZMP est'],
-            ['DCM'],
-            ['Angular Momentum'],
-        ],
-        title_prefix='ZMP, DCM, and Angular Momentum'
-    )
+    # === ZMP, DCM & Angular Momentum === (Fixed version)
+    fig, axes = plt.subplots(3, 3, figsize=(15, 10))
+    components = ['x', 'y', 'z']
+    types = ['ZMP', 'DCM', 'Angular Momentum']
 
-    # === Forces (normal) ===
+    # ZMP column
+    for row in range(3):
+        axes[row, 0].plot(TIME, ZMP_REF[:, row], label='ZMP ref')
+        axes[row, 0].plot(TIME, ZMP_EST[:, row], label='ZMP est')
+        axes[row, 0].set_ylabel(components[row])
+        axes[row, 0].set_title(f"ZMP - {components[row]}")
+        axes[row, 0].legend()
+
+    # DCM column
+    for row in range(3):
+        axes[row, 1].plot(TIME, DCM[:, row], label='DCM')
+        axes[row, 1].set_ylabel(components[row])
+        axes[row, 1].set_title(f"DCM - {components[row]}")
+        axes[row, 1].legend()
+
+    # Angular Momentum column
+    for row in range(3):
+        axes[row, 2].plot(TIME, ANGULAR_MOMENTUM[:, row], label='Angular Momentum')
+        axes[row, 2].set_ylabel(components[row])
+        axes[row, 2].set_title(f"Angular Momentum - {components[row]}")
+        axes[row, 2].legend()
+
+    plt.tight_layout()
+
+    # === Forces (normal) === (Fixed version)
     plot_3x1(
         data_refs=[
-            np.stack([NORMAL_FORCE_LEFT_pb, NORMAL_FORCE_LEFT_pb,
-                     NORMAL_FORCE_LEFT_pb], axis=1),
-            np.stack([NORMAL_FORCE_RIGHT_pb, NORMAL_FORCE_RIGHT_pb,
-                     NORMAL_FORCE_RIGHT_pb], axis=1),
-            np.stack([NORMAL_FORCE_LEFT_pin, NORMAL_FORCE_LEFT_pin,
-                     NORMAL_FORCE_LEFT_pin], axis=1),
-            np.stack([NORMAL_FORCE_RIGHT_pin, NORMAL_FORCE_RIGHT_pin,
-                     NORMAL_FORCE_RIGHT_pin], axis=1)
+            NORMAL_FORCE_LEFT_pb,
+            NORMAL_FORCE_RIGHT_pb,
+            NORMAL_FORCE_LEFT_pin,
+            NORMAL_FORCE_RIGHT_pin
         ],
         labels=['LF_pb', 'RF_pb', 'LF_pin', 'RF_pin'],
         title_prefix='Normal Forces'

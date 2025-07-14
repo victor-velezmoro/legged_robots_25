@@ -12,8 +12,8 @@ from simulator.pybullet_wrapper import PybulletWrapper
 from simulator.robot import Robot
 
 # robot and controller
-from tutorial_4.tsid_wrapper import TSIDWrapper
-import tutorial_4.config as conf
+from tut_4_5.tsid_wrapper import TSIDWrapper
+import tut_4_5.config as conf
 from tf2_ros import TransformBroadcaster
 from geometry_msgs.msg import TransformStamped
 
@@ -402,7 +402,7 @@ def main():
             axs[2, i].grid()
 
         plt.tight_layout()
-        plt.savefig('com_analysis3.png', dpi=300)
+        plt.savefig('com_analysis2.png', dpi=300)
         plt.show()
         
     

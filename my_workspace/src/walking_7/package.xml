@@ -11,8 +11,8 @@
   <depend>reemc_description</depend>
   <depend>talos_description</depend>
   <depend>bullet_sims</depend>
-  <depend>tutorial_4</depend>
-  <depend>tut_walking</depend>
+  <depend>tut_4_5</depend>
+  <depend>tut_6</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
